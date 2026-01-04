@@ -1,8 +1,13 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { nanoid } from 'nanoid';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
+}
+
+export function generateShortCode(): string {
+  return nanoid(8).toUpperCase();
 }
 
 export function truncateAddress(address: string, chars = 4): string {

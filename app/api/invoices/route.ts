@@ -1,0 +1,65 @@
+import { createClient } from '@/lib/supabase/server';
+import { cookies } from 'next/headers';
+import { generateShortCode } from '@/lib/utils';
+import { invoiceSchema } from '@/lib/validation';
+import { z } from 'zod';
+
+export async function GET() {
+  const cookieStore = await cookies();
+  const walletAddress = cookieStore.get('wallet-address')?.value;
+
+  if (!walletAddress) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('invoices')
+    .select('*')
+    .eq('creator_wallet', walletAddress)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+
+  return Response.json({ invoices: data });
+}
+
+export async function POST(req: Request) {
+  const cookieStore = await cookies();
+  const walletAddress = cookieStore.get('wallet-address')?.value;
+
+  if (!walletAddress) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const body = await req.json();
+    const validatedData = invoiceSchema.parse(body);
+
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from('invoices')
+      .insert({
+        ...validatedData,
+        auto_release_days: validatedData.auto_release_days ?? 14,
+        short_code: generateShortCode(),
+        creator_wallet: walletAddress,
+        status: 'pending',
+      })
+      .select()
+      .single();
+
+    if (error) {
+      return Response.json({ error: error.message }, { status: 500 });
+    }
+
+    return Response.json({ invoice: data }, { status: 201 });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return Response.json({ error: error.issues }, { status: 400 });
+    }
+    return Response.json({ error: 'Invalid request' }, { status: 400 });
+  }
+}
