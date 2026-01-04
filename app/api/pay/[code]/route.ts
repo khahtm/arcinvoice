@@ -39,7 +39,6 @@ export async function GET(
 const updateSchema = z.object({
   status: z.enum(['funded', 'released']),
   tx_hash: z.string().regex(/^0x[a-fA-F0-9]{64}$/, 'Invalid transaction hash'),
-  payer_wallet: z.string().regex(/^0x[a-fA-F0-9]{40}$/).optional(),
 });
 
 export async function PATCH(
@@ -78,8 +77,7 @@ export async function PATCH(
       .update({
         status: validatedData.status,
         tx_hash: validatedData.tx_hash,
-        payer_wallet: validatedData.payer_wallet,
-        paid_at: new Date().toISOString(),
+        funded_at: new Date().toISOString(),
       })
       .eq('short_code', code.toUpperCase())
       .select()

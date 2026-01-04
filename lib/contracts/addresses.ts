@@ -2,16 +2,16 @@
 // USDC is the native gas token on Arc, but also has an ERC20 interface
 
 export const CONTRACTS = {
-  // Arc Testnet (Chain ID: 18500)
-  18500: {
+  // Arc Testnet (Chain ID: 5042002)
+  5042002: {
     // USDC contract address on Arc testnet
     // Note: On Arc, USDC is native but has ERC20 wrapper for compatibility
-    USDC: '0x0000000000000000000000000000000000000001' as const, // TODO: Update with actual address
+    USDC: '0x3600000000000000000000000000000000000000' as const, // TODO: Update with actual address
     FACTORY: '' as const, // Deploy in Phase 5
   },
-  // Arc Mainnet (Chain ID: 185)
-  185: {
-    USDC: '0x0000000000000000000000000000000000000001' as const, // TODO: Update with actual address
+  // Arc Mainnet (Chain ID: 5042001) - Placeholder until mainnet launches
+  5042001: {
+    USDC: '0x3600000000000000000000000000000000000000' as const, // TODO: Update with actual address
     FACTORY: '' as const,
   },
 } as const;

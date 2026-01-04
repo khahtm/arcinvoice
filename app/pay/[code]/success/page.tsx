@@ -22,7 +22,7 @@ export default function PaymentSuccessPage() {
   };
 
   const explorerUrl = txHash
-    ? `https://testnet-explorer.arc.circle.com/tx/${txHash}`
+    ? `https://testnet.arcscan.app/tx/${txHash}`
     : null;
 
   return (

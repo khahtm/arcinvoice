@@ -2,7 +2,6 @@
 
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAccount } from 'wagmi';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -26,7 +25,6 @@ export default function PaymentPage({
 }) {
   const { code } = use(params);
   const router = useRouter();
-  const { address } = useAccount();
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +51,6 @@ export default function PaymentPage({
         body: JSON.stringify({
           status: invoice?.payment_type === 'direct' ? 'released' : 'funded',
           tx_hash: txHash,
-          payer_wallet: address,
         }),
       });
 
