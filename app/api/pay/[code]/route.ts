@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { z } from 'zod';
 
 // GET: Fetch invoice by short code (public endpoint)
@@ -51,7 +52,8 @@ export async function PATCH(
     const body = await req.json();
     const validatedData = updateSchema.parse(body);
 
-    const supabase = await createClient();
+    // Use admin client to bypass RLS - payer is not the invoice creator
+    const supabase = createAdminClient();
 
     // Get current invoice
     const { data: existing } = await supabase

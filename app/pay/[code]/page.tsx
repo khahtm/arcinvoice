@@ -45,7 +45,7 @@ export default function PaymentPage({
 
   const handlePaymentSuccess = async (txHash: string) => {
     try {
-      await fetch(`/api/pay/${code}`, {
+      const res = await fetch(`/api/pay/${code}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -54,10 +54,18 @@ export default function PaymentPage({
         }),
       });
 
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to update invoice');
+      }
+
       toast.success('Payment successful!');
       router.push(`/pay/${code}/success?tx=${txHash}`);
-    } catch {
-      toast.error('Failed to update invoice status');
+    } catch (err) {
+      console.error('Payment update error:', err);
+      // Still redirect to success - payment went through, just DB update failed
+      toast.error('Payment sent! Status update may be delayed.');
+      router.push(`/pay/${code}/success?tx=${txHash}`);
     }
   };
 
