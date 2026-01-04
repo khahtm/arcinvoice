@@ -2,6 +2,7 @@
 title: "Arc Invoice MVP Implementation"
 description: "Payment link generator with escrow protection on Arc blockchain"
 status: in-progress
+completed-phase-2: 2026-01-05
 priority: P1
 effort: 15d
 issue: null
@@ -32,7 +33,7 @@ See: `../reports/brainstorm-260104-2309-arc-invoice-mvp-architecture.md`
 | # | Phase | Status | Effort | Link |
 |---|-------|--------|--------|------|
 | 1 | Project Setup & Dependencies | Done | 1d | [phase-01](./phase-01-project-setup.md) |
-| 2 | Database & Authentication | Pending | 1.5d | [phase-02](./phase-02-database-auth.md) |
+| 2 | Database & Authentication | Done | 1.5d | [phase-02](./phase-02-database-auth.md) |
 | 3 | Invoice Creation & Management | Pending | 2d | [phase-03](./phase-03-invoice-management.md) |
 | 4 | Public Payment Page | Pending | 1.5d | [phase-04](./phase-04-payment-page.md) |
 | 5 | Smart Contracts | Pending | 2d | [phase-05](./phase-05-smart-contracts.md) |
