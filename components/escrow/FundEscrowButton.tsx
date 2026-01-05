@@ -10,6 +10,7 @@ import { parseUnits } from 'viem';
 interface FundEscrowButtonProps {
   escrowAddress: `0x${string}`;
   amount: string;
+  contractVersion?: number;
   onSuccess?: (txHash: string) => void;
   onError?: (error: Error) => void;
 }
@@ -17,11 +18,13 @@ interface FundEscrowButtonProps {
 export function FundEscrowButton({
   escrowAddress,
   amount,
+  contractVersion = 1,
   onSuccess,
   onError,
 }: FundEscrowButtonProps) {
   const { address, isConnected } = useAccount();
   const { balanceRaw } = useUSDCBalance(address);
+  const isV2 = contractVersion === 2;
   const {
     needsApproval,
     approveUSDC,
@@ -31,10 +34,13 @@ export function FundEscrowButton({
     isDepositing,
     isDepositSuccess,
     depositHash,
-  } = useFundEscrow(escrowAddress, amount);
+    payerAmountDisplay,
+    isLoadingAmount,
+  } = useFundEscrow(escrowAddress, amount, contractVersion);
 
-  const amountWei = parseUnits(amount, 6);
-  const hasEnoughBalance = balanceRaw >= amountWei;
+  // Check balance against actual payer amount from contract
+  const payerAmountWei = parseUnits(payerAmountDisplay.toFixed(6), 6);
+  const hasEnoughBalance = balanceRaw >= payerAmountWei;
 
   // Call onSuccess when deposit succeeds
   useEffect(() => {
@@ -47,6 +53,15 @@ export function FundEscrowButton({
     return <Button disabled className="w-full">Connect wallet to fund</Button>;
   }
 
+  // Check loading state FIRST for V2 (before balance check uses wrong amount)
+  if (isLoadingAmount) {
+    return (
+      <Button disabled className="w-full">
+        Loading amount...
+      </Button>
+    );
+  }
+
   if (!hasEnoughBalance) {
     return (
       <Button disabled variant="destructive" className="w-full">
@@ -55,17 +70,21 @@ export function FundEscrowButton({
     );
   }
 
+  // Display amount from contract calculation
+  const displayAmount = payerAmountDisplay.toFixed(2);
+  const feeNote = isV2 ? ' (incl. fee)' : '';
+
   if (needsApproval) {
     return (
       <Button onClick={approveUSDC} disabled={isApproving} className="w-full">
-        {isApproving ? 'Approving...' : `Approve ${amount} USDC`}
+        {isApproving ? 'Approving...' : `Approve ${displayAmount} USDC${feeNote}`}
       </Button>
     );
   }
 
   return (
     <Button onClick={fundEscrow} disabled={isDepositing} className="w-full">
-      {isDepositing ? 'Funding...' : `Fund Escrow (${amount} USDC)`}
+      {isDepositing ? 'Funding...' : `Fund Escrow (${displayAmount} USDC)${feeNote}`}
     </Button>
   );
 }

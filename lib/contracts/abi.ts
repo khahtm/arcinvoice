@@ -268,8 +268,9 @@ export const MILESTONE_FACTORY_ABI = [
   },
 ] as const;
 
-// Milestone Escrow ABI
-export const MILESTONE_ESCROW_ABI = [
+// Milestone Escrow ABI V2 Legacy (fund-all-upfront)
+// Used for existing V2 invoices created before 2026-01-05
+export const MILESTONE_ESCROW_ABI_V2_LEGACY = [
   {
     name: 'deposit',
     type: 'function',
@@ -313,8 +314,7 @@ export const MILESTONE_ESCROW_ABI = [
     outputs: [
       { name: '_creator', type: 'address' },
       { name: '_payer', type: 'address' },
-      { name: '_totalAmount', type: 'uint256' },
-      { name: '_releasedAmount', type: 'uint256' },
+      { name: '_amount', type: 'uint256' },
       { name: '_state', type: 'uint8' },
       { name: '_fundedAt', type: 'uint256' },
       { name: '_autoReleaseDays', type: 'uint256' },
@@ -354,7 +354,137 @@ export const MILESTONE_ESCROW_ABI = [
     outputs: [{ name: '', type: 'bool' }],
   },
   {
+    name: 'Funded',
+    type: 'event',
+    inputs: [
+      { name: 'payer', type: 'address', indexed: true },
+      { name: 'amount', type: 'uint256', indexed: false },
+    ],
+  },
+  {
+    name: 'MilestoneApproved',
+    type: 'event',
+    inputs: [
+      { name: 'index', type: 'uint256', indexed: true },
+      { name: 'payer', type: 'address', indexed: true },
+    ],
+  },
+  {
+    name: 'MilestoneReleased',
+    type: 'event',
+    inputs: [
+      { name: 'index', type: 'uint256', indexed: true },
+      { name: 'creatorAmount', type: 'uint256', indexed: false },
+      { name: 'fee', type: 'uint256', indexed: false },
+    ],
+  },
+  {
+    name: 'Refunded',
+    type: 'event',
+    inputs: [
+      { name: 'recipient', type: 'address', indexed: true },
+      { name: 'amount', type: 'uint256', indexed: false },
+    ],
+  },
+] as const;
+
+// Milestone Escrow ABI (V3: Pay-per-milestone)
+export const MILESTONE_ESCROW_ABI = [
+  // V3: Fund individual milestones sequentially
+  {
+    name: 'fundMilestone',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'index', type: 'uint256' }],
+    outputs: [],
+  },
+  {
+    name: 'releaseMilestone',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'index', type: 'uint256' }],
+    outputs: [],
+  },
+  {
+    name: 'refund',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [],
+    outputs: [],
+  },
+  {
+    name: 'autoRelease',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [],
+    outputs: [],
+  },
+  {
+    name: 'getDetails',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [
+      { name: '_creator', type: 'address' },
+      { name: '_payer', type: 'address' },
+      { name: '_totalAmount', type: 'uint256' },
+      { name: '_fundedAmount', type: 'uint256' },
+      { name: '_releasedAmount', type: 'uint256' },
+      { name: '_state', type: 'uint8' },
+      { name: '_fundedAt', type: 'uint256' },
+      { name: '_autoReleaseDays', type: 'uint256' },
+      { name: '_milestoneCount', type: 'uint256' },
+      { name: '_currentMilestone', type: 'uint256' },
+    ],
+  },
+  {
+    name: 'getMilestone',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [{ name: 'index', type: 'uint256' }],
+    outputs: [
+      { name: 'amount', type: 'uint256' },
+      { name: 'funded', type: 'bool' },
+      { name: 'released', type: 'bool' },
+    ],
+  },
+  {
+    name: 'getMilestoneCount',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  {
+    name: 'getCurrentMilestone',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  {
+    name: 'state',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint8' }],
+  },
+  {
+    name: 'canAutoRelease',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'bool' }],
+  },
+  {
     name: 'totalAmount',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  {
+    name: 'fundedAmount',
     type: 'function',
     stateMutability: 'view',
     inputs: [],
@@ -368,18 +498,13 @@ export const MILESTONE_ESCROW_ABI = [
     outputs: [{ name: '', type: 'uint256' }],
   },
   {
-    name: 'Funded',
+    name: 'MilestoneFunded',
     type: 'event',
     inputs: [
+      { name: 'index', type: 'uint256', indexed: true },
       { name: 'payer', type: 'address', indexed: true },
       { name: 'amount', type: 'uint256', indexed: false },
-      { name: 'timestamp', type: 'uint256', indexed: false },
     ],
-  },
-  {
-    name: 'MilestoneApproved',
-    type: 'event',
-    inputs: [{ name: 'index', type: 'uint256', indexed: true }],
   },
   {
     name: 'MilestoneReleased',
@@ -417,5 +542,43 @@ export const MILESTONE_ESCROW_ABI = [
       { name: 'payerAmount', type: 'uint256', indexed: false },
       { name: 'creatorAmount', type: 'uint256', indexed: false },
     ],
+  },
+  // Kleros integration
+  {
+    name: 'klerosExecutor',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+  },
+  {
+    name: 'setKlerosExecutor',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: '_executor', type: 'address' }],
+    outputs: [],
+  },
+  {
+    name: 'executeKlerosRuling',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'payerAmount', type: 'uint256' },
+      { name: 'creatorAmount', type: 'uint256' },
+    ],
+    outputs: [],
+  },
+  {
+    name: 'KlerosRulingExecuted',
+    type: 'event',
+    inputs: [
+      { name: 'payerAmount', type: 'uint256', indexed: false },
+      { name: 'creatorAmount', type: 'uint256', indexed: false },
+    ],
+  },
+  {
+    name: 'KlerosExecutorUpdated',
+    type: 'event',
+    inputs: [{ name: 'newExecutor', type: 'address', indexed: true }],
   },
 ] as const;

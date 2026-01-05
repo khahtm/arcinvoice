@@ -32,6 +32,7 @@ export async function GET(
       creator_wallet: data.creator_wallet,
       escrow_address: data.escrow_address,
       auto_release_days: data.auto_release_days,
+      contract_version: data.contract_version,
     },
   });
 }
@@ -39,7 +40,8 @@ export async function GET(
 // PATCH: Update invoice status after payment
 const updateSchema = z.object({
   status: z.enum(['funded', 'released']),
-  tx_hash: z.string().regex(/^0x[a-fA-F0-9]{64}$/, 'Invalid transaction hash'),
+  // Accept both on-chain tx hashes (0x...) and Transak order IDs (transak:...)
+  tx_hash: z.string().regex(/^(0x[a-fA-F0-9]{64}|transak:[a-zA-Z0-9-]+)$/, 'Invalid transaction hash'),
 });
 
 export async function PATCH(

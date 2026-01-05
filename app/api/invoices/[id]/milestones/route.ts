@@ -17,5 +17,11 @@ export async function GET(
     return Response.json({ error: error.message }, { status: 500 });
   }
 
-  return Response.json({ milestones: data });
+  // Convert micro USDC back to USDC for frontend
+  const milestones = data?.map((m) => ({
+    ...m,
+    amount: Number(m.amount) / 1_000_000,
+  }));
+
+  return Response.json({ milestones });
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,30 +20,47 @@ export function MilestoneInputList({
   onChange,
   totalAmount,
 }: MilestoneInputListProps) {
+  // Track input values as strings to allow typing "0.49" properly
+  const [inputValues, setInputValues] = useState<string[]>([]);
+
+  // Sync input values when milestones change externally
+  useEffect(() => {
+    setInputValues(milestones.map((m) => (m.amount === 0 ? '' : String(m.amount))));
+  }, [milestones.length]);
+
   const addMilestone = () => {
     if (milestones.length >= 10) return;
     onChange([...milestones, { amount: 0, description: '' }]);
+    setInputValues([...inputValues, '']);
   };
 
   const removeMilestone = (index: number) => {
     onChange(milestones.filter((_, i) => i !== index));
+    setInputValues(inputValues.filter((_, i) => i !== index));
   };
 
-  const updateMilestone = (
-    index: number,
-    field: keyof MilestoneInput,
-    value: string | number
-  ) => {
+  const updateAmount = (index: number, value: string) => {
+    // Update display value immediately
+    const newInputValues = [...inputValues];
+    newInputValues[index] = value;
+    setInputValues(newInputValues);
+
+    // Update numeric value in milestones
+    const numValue = value === '' ? 0 : parseFloat(value) || 0;
     const updated = [...milestones];
-    updated[index] = { ...updated[index], [field]: value };
+    updated[index] = { ...updated[index], amount: numValue };
     onChange(updated);
   };
 
-  // Convert totalAmount to smallest units for comparison
-  const totalInUnits = Math.round(totalAmount * 1e6);
+  const updateDescription = (index: number, value: string) => {
+    const updated = [...milestones];
+    updated[index] = { ...updated[index], description: value };
+    onChange(updated);
+  };
+
+  // Compare amounts with tolerance for floating point
   const currentSum = milestones.reduce((sum, m) => sum + (m.amount || 0), 0);
-  const currentSumInUnits = Math.round(currentSum * 1e6);
-  const isValid = currentSumInUnits === totalInUnits;
+  const isValid = Math.abs(currentSum - totalAmount) < 0.001;
   const remaining = totalAmount - currentSum;
 
   return (
@@ -52,7 +70,7 @@ export function MilestoneInputList({
         <span
           className={`text-sm ${isValid ? 'text-green-600' : 'text-orange-600'}`}
         >
-          {formatUSDC(currentSum * 1e6)} / {formatUSDC(totalAmount * 1e6)}
+          {formatUSDC(currentSum)} / {formatUSDC(totalAmount)}
         </span>
       </div>
 
@@ -73,22 +91,19 @@ export function MilestoneInputList({
           <div className="grid grid-cols-3 gap-2">
             <div>
               <Input
-                type="number"
-                step="0.01"
-                placeholder="Amount"
-                value={milestone.amount || ''}
-                onChange={(e) =>
-                  updateMilestone(index, 'amount', Number(e.target.value))
-                }
+                type="text"
+                inputMode="decimal"
+                pattern="[0-9]*\.?[0-9]*"
+                placeholder="0.00"
+                value={inputValues[index] ?? ''}
+                onChange={(e) => updateAmount(index, e.target.value)}
               />
             </div>
             <div className="col-span-2">
               <Input
                 placeholder="Description"
                 value={milestone.description}
-                onChange={(e) =>
-                  updateMilestone(index, 'description', e.target.value)
-                }
+                onChange={(e) => updateDescription(index, e.target.value)}
               />
             </div>
           </div>
@@ -110,8 +125,8 @@ export function MilestoneInputList({
       {!isValid && milestones.length > 0 && (
         <p className="text-sm text-orange-600">
           {remaining > 0
-            ? `${formatUSDC(remaining * 1e6)} remaining to allocate`
-            : `${formatUSDC(Math.abs(remaining) * 1e6)} over budget`}
+            ? `${formatUSDC(remaining)} remaining to allocate`
+            : `${formatUSDC(Math.abs(remaining))} over budget`}
         </p>
       )}
     </div>

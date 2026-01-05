@@ -8,6 +8,9 @@ import { OpenDisputeButton } from './OpenDisputeButton';
 import { ProposeResolutionForm } from './ProposeResolutionForm';
 import { AcceptRejectButtons } from './AcceptRejectButtons';
 import { EvidenceList } from './EvidenceList';
+import { EscalateToKlerosButton } from './EscalateToKlerosButton';
+import { KlerosStatus } from './KlerosStatus';
+import { KlerosEvidenceForm } from './KlerosEvidenceForm';
 import { formatUSDC, truncateAddress } from '@/lib/utils';
 import { useAccount } from 'wagmi';
 import { AlertTriangle } from 'lucide-react';
@@ -167,13 +170,31 @@ export function DisputePanel({
       )}
 
       {/* Evidence section */}
-      {dispute.status !== 'resolved' && (
+      {dispute.status !== 'resolved' && dispute.status !== 'escalated' && (
         <EvidenceList
           evidence={dispute.evidence || []}
           onSubmit={(content, fileUrl) =>
             submitEvidence(dispute.id, content, fileUrl)
           }
         />
+      )}
+
+      {/* Kleros escalation option */}
+      {(dispute.status === 'open' || dispute.status === 'proposed') && (
+        <div className="border-t pt-4 mt-4">
+          <p className="text-sm text-muted-foreground mb-2">
+            Can&apos;t reach agreement? Escalate to decentralized arbitration.
+          </p>
+          <EscalateToKlerosButton invoiceId={invoiceId} disputeId={dispute.id} />
+        </div>
+      )}
+
+      {/* Kleros status when escalated */}
+      {dispute.status === 'escalated' && (
+        <div className="space-y-4">
+          <KlerosStatus invoiceId={invoiceId} disputeId={dispute.id} />
+          <KlerosEvidenceForm invoiceId={invoiceId} disputeId={dispute.id} />
+        </div>
       )}
 
       {/* Expiry warning */}

@@ -4,12 +4,15 @@ import { useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { Button } from '@/components/ui/button';
 import { useCreateEscrow } from '@/hooks/useCreateEscrow';
+import { useCreateMilestoneEscrow } from '@/hooks/useCreateMilestoneEscrow';
 import { ConnectButton } from '@/components/wallet/ConnectButton';
+import type { Milestone } from '@/types/database';
 
 interface CreateEscrowButtonProps {
   invoiceId: string;
   amount: number;
   autoReleaseDays: number;
+  milestones?: Milestone[];
   onSuccess?: (escrowAddress: string, txHash: string) => void;
 }
 
@@ -17,17 +20,25 @@ export function CreateEscrowButton({
   invoiceId,
   amount,
   autoReleaseDays,
+  milestones,
   onSuccess,
 }: CreateEscrowButtonProps) {
   const { isConnected } = useAccount();
+  const isV2 = milestones && milestones.length > 0;
+
+  // V1 hook for basic escrow
+  const v1Hook = useCreateEscrow();
+  // V2 hook for milestone escrow
+  const v2Hook = useCreateMilestoneEscrow();
+
+  // Select the appropriate hook based on contract version
   const {
-    createEscrow,
     hash,
     isPending,
     isConfirming,
     isSuccess,
     escrowAddress,
-  } = useCreateEscrow();
+  } = isV2 ? v2Hook : v1Hook;
 
   useEffect(() => {
     if (isSuccess && escrowAddress && hash && onSuccess) {
@@ -47,7 +58,14 @@ export function CreateEscrowButton({
   }
 
   const handleCreate = () => {
-    createEscrow(invoiceId, amount, autoReleaseDays);
+    if (isV2 && milestones) {
+      // V2: Create milestone escrow with milestone amounts
+      const milestoneAmounts = milestones.map((m) => m.amount);
+      v2Hook.createEscrow(invoiceId, milestoneAmounts, autoReleaseDays);
+    } else {
+      // V1: Create basic escrow with total amount
+      v1Hook.createEscrow(invoiceId, amount, autoReleaseDays);
+    }
   };
 
   return (

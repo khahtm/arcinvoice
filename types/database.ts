@@ -1,6 +1,7 @@
 export type PaymentType = 'direct' | 'escrow';
 export type InvoiceStatus = 'draft' | 'pending' | 'funded' | 'released' | 'refunded';
-export type MilestoneStatus = 'pending' | 'approved' | 'released';
+// V3: pending -> funded -> released (no separate approval)
+export type MilestoneStatus = 'pending' | 'funded' | 'approved' | 'released';
 
 export interface Invoice {
   id: string;
@@ -52,6 +53,36 @@ export interface CreateInvoiceInput {
 
 // Dispute types
 export type DisputeStatus = 'open' | 'proposed' | 'resolved' | 'escalated' | 'expired';
+
+// Kleros types
+export type KlerosStatus = 'pending' | 'evidence' | 'voting' | 'appeal' | 'resolved';
+
+export interface KlerosCase {
+  id: string;
+  dispute_id: string;
+  kleros_dispute_id: string | null;
+  status: KlerosStatus;
+  ruling: string | null;
+  payer_amount: number | null;
+  creator_amount: number | null;
+  arbitration_fee_eth: string | null;
+  arbitration_fee_paid_by: string | null;
+  evidence_deadline: string | null;
+  ruling_at: string | null;
+  executed: boolean;
+  executed_at: string | null;
+  executed_tx_hash: string | null;
+  created_at: string;
+}
+
+export interface KlerosEvidence {
+  id: string;
+  case_id: string;
+  submitted_by: string;
+  evidence_uri: string;
+  kleros_evidence_id: string | null;
+  created_at: string;
+}
 export type ResolutionType = 'refund' | 'release' | 'split';
 
 export interface Dispute {

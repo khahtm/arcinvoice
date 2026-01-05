@@ -40,9 +40,9 @@ export async function POST(req: Request) {
 
     const supabase = await createClient();
 
-    // Determine contract version: v2 if milestones, v1 otherwise
+    // Determine contract version: v3 if milestones (pay-per-milestone), v1 otherwise
     const hasMilestones = validatedData.milestones && validatedData.milestones.length > 0;
-    const contractVersion = hasMilestones ? 2 : 1;
+    const contractVersion = hasMilestones ? 3 : 1;
 
     // Create invoice (exclude milestones from insert)
     const { milestones, ...invoiceData } = validatedData;
@@ -68,7 +68,7 @@ export async function POST(req: Request) {
       const milestonesWithInvoiceId = milestones.map((m, i) => ({
         invoice_id: invoice.id,
         order_index: i,
-        amount: m.amount,
+        amount: Math.round(m.amount * 1_000_000), // Convert USDC to micro USDC for bigint
         description: m.description,
         status: 'pending',
       }));

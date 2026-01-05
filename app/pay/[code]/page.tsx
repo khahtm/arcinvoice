@@ -1,16 +1,19 @@
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState, use, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ConnectButton } from '@/components/wallet/ConnectButton';
 import { DirectPayButton } from '@/components/payment/DirectPayButton';
+import { TransakPayButton } from '@/components/payment/TransakPayButton';
 import { FundEscrowButton } from '@/components/escrow/FundEscrowButton';
+import { FundMilestoneButton } from '@/components/escrow/FundMilestoneButton';
+import { useEscrowStatus } from '@/hooks/useEscrowStatus';
 import { formatUSDC, truncateAddress } from '@/lib/utils';
 import { toast } from 'sonner';
-import type { Invoice } from '@/types/database';
+import type { Invoice, Milestone } from '@/types/database';
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   pending: { label: 'Awaiting Payment', color: 'bg-yellow-500' },
@@ -27,6 +30,7 @@ export default function PaymentPage({
   const { code } = use(params);
   const router = useRouter();
   const [invoice, setInvoice] = useState<Invoice | null>(null);
+  const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,6 +47,30 @@ export default function PaymentPage({
       .catch(() => setError('Failed to load invoice'))
       .finally(() => setIsLoading(false));
   }, [code]);
+
+  // Fetch milestones for V2/V3 invoices
+  const fetchMilestones = useCallback(() => {
+    if (invoice?.id) {
+      fetch(`/api/invoices/${invoice.id}/milestones`)
+        .then((res) => res.json())
+        .then((data) => setMilestones(data.milestones || []))
+        .catch(() => setMilestones([]));
+    }
+  }, [invoice?.id]);
+
+  useEffect(() => {
+    const hasMilestones = invoice?.contract_version === 2 || invoice?.contract_version === 3;
+    if (hasMilestones && invoice?.id) {
+      fetchMilestones();
+    }
+  }, [invoice, fetchMilestones]);
+
+  // Get current milestone index for V3 sequential funding
+  const isV3 = invoice?.contract_version === 3;
+  const { currentMilestone, refetch: refetchEscrow } = useEscrowStatus(
+    invoice?.escrow_address as `0x${string}` | undefined,
+    invoice?.contract_version
+  );
 
   const handlePaymentSuccess = async (txHash: string) => {
     try {
@@ -71,7 +99,64 @@ export default function PaymentPage({
   };
 
   const handlePaymentError = (err: Error) => {
+    // Simplify user rejection message
+    if (err.message?.includes('User rejected') || err.message?.includes('user rejected')) {
+      toast.error('Transaction cancelled');
+      return;
+    }
     toast.error(err.message || 'Payment failed');
+  };
+
+  // Handler for Transak fiat payment success
+  const handleTransakSuccess = async (orderId: string) => {
+    try {
+      const res = await fetch(`/api/pay/${code}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: invoice?.payment_type === 'direct' ? 'released' : 'funded',
+          tx_hash: `transak:${orderId}`,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to update invoice');
+      }
+
+      toast.success('Payment successful!');
+      router.push(`/pay/${code}/success?tx=transak:${orderId}`);
+    } catch (err) {
+      console.error('Payment update error:', err);
+      toast.error('Payment processing. Status update may be delayed.');
+      router.push(`/pay/${code}/success?tx=transak:${orderId}`);
+    }
+  };
+
+  // Handler for V3 milestone funding success
+  const handleMilestoneFundSuccess = async (milestoneId: string) => {
+    try {
+      const res = await fetch(`/api/invoices/${invoice?.id}/milestones/${milestoneId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'funded' }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        console.error('Milestone status update failed:', data);
+        toast.error(data.error || 'Status update failed');
+        return;
+      }
+
+      toast.success('Milestone funded!');
+      // Refresh milestones and escrow status
+      fetchMilestones();
+      refetchEscrow();
+    } catch (err) {
+      console.error('Milestone fund error:', err);
+      toast.error('Status update failed');
+    }
   };
 
   if (isLoading) {
@@ -142,6 +227,64 @@ export default function PaymentPage({
           </p>
         </div>
 
+        {/* V3 Pay-Per-Milestone */}
+        {isV3 && milestones.length > 0 && invoice.escrow_address && (
+          <div className="py-4 border-t space-y-3">
+            <p className="text-sm font-medium">Payment Milestones</p>
+            {milestones.map((m, i) => (
+              <div
+                key={m.id}
+                className="flex justify-between items-center p-3 border rounded-lg"
+              >
+                <div>
+                  <p className="font-medium text-sm">
+                    {i + 1}. {m.description}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {formatUSDC(m.amount)}
+                  </p>
+                </div>
+                <div>
+                  {m.status === 'released' ? (
+                    <Badge>Released</Badge>
+                  ) : m.status === 'funded' ? (
+                    <Badge variant="secondary">Funded</Badge>
+                  ) : (
+                    <FundMilestoneButton
+                      escrowAddress={invoice.escrow_address as `0x${string}`}
+                      milestoneIndex={i}
+                      milestoneAmount={m.amount}
+                      isCurrentMilestone={i === currentMilestone}
+                      onSuccess={() => handleMilestoneFundSuccess(m.id)}
+                    />
+                  )}
+                </div>
+              </div>
+            ))}
+            <p className="text-xs text-muted-foreground">
+              Fund milestones sequentially as work is completed
+            </p>
+          </div>
+        )}
+
+        {/* V2 Milestone Breakdown (legacy fund-all-upfront) */}
+        {invoice.contract_version === 2 && milestones.length > 0 && (
+          <div className="py-4 border-t space-y-2">
+            <p className="text-sm font-medium">Payment Milestones</p>
+            {milestones.map((m, i) => (
+              <div key={m.id} className="flex justify-between text-sm">
+                <span className="text-muted-foreground">
+                  {i + 1}. {m.description}
+                </span>
+                <span className="font-medium">{formatUSDC(m.amount)}</span>
+              </div>
+            ))}
+            <div className="text-xs text-muted-foreground pt-2">
+              Funds released milestone-by-milestone after your approval
+            </div>
+          </div>
+        )}
+
         {/* Payment Actions */}
         {isPaid ? (
           <div className="mt-4 text-center">
@@ -151,26 +294,77 @@ export default function PaymentPage({
           </div>
         ) : (
           <div className="space-y-4 mt-4">
-            <div className="flex justify-center">
-              <ConnectButton />
+            {/* Section Header */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  Payment Options
+                </span>
+              </div>
             </div>
 
-            {invoice.payment_type === 'direct' && (
-              <DirectPayButton
+            {/* Crypto Payment */}
+            <div className="space-y-2">
+              <div className="flex justify-center">
+                <ConnectButton />
+              </div>
+
+              {invoice.payment_type === 'direct' && (
+                <DirectPayButton
+                  amount={invoice.amount}
+                  recipient={invoice.creator_wallet as `0x${string}`}
+                  onSuccess={handlePaymentSuccess}
+                  onError={handlePaymentError}
+                />
+              )}
+
+              {/* V1/V2: Fund all upfront */}
+              {invoice.payment_type === 'escrow' &&
+                invoice.escrow_address &&
+                !isV3 && (
+                  <FundEscrowButton
+                    escrowAddress={invoice.escrow_address as `0x${string}`}
+                    amount={invoice.amount.toString()}
+                    contractVersion={invoice.contract_version}
+                    onSuccess={handlePaymentSuccess}
+                    onError={handlePaymentError}
+                  />
+                )}
+            </div>
+
+            {/* Fiat Payment Divider */}
+            {!isV3 && (
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">
+                    or pay with card
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Fiat Payment - Transak (not for V3 milestone invoices) */}
+            {!isV3 && (
+              <TransakPayButton
                 amount={invoice.amount}
-                recipient={invoice.creator_wallet as `0x${string}`}
-                onSuccess={handlePaymentSuccess}
+                walletAddress={invoice.escrow_address || invoice.creator_wallet}
+                invoiceCode={invoice.short_code}
+                onSuccess={handleTransakSuccess}
                 onError={handlePaymentError}
               />
             )}
 
-            {invoice.payment_type === 'escrow' && invoice.escrow_address && (
-              <FundEscrowButton
-                escrowAddress={invoice.escrow_address as `0x${string}`}
-                amount={invoice.amount.toString()}
-                onSuccess={handlePaymentSuccess}
-                onError={handlePaymentError}
-              />
+            {/* V3: Milestones funded individually via section above */}
+            {isV3 && invoice.escrow_address && (
+              <p className="text-sm text-muted-foreground text-center">
+                Fund milestones above as work is completed
+              </p>
             )}
 
             {invoice.payment_type === 'escrow' && !invoice.escrow_address && (
