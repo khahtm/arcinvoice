@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ConnectButton } from '@/components/wallet/ConnectButton';
 import { DirectPayButton } from '@/components/payment/DirectPayButton';
+import { FundEscrowButton } from '@/components/escrow/FundEscrowButton';
 import { formatUSDC, truncateAddress } from '@/lib/utils';
 import { toast } from 'sonner';
 import type { Invoice } from '@/types/database';
@@ -163,9 +164,18 @@ export default function PaymentPage({
               />
             )}
 
-            {invoice.payment_type === 'escrow' && (
+            {invoice.payment_type === 'escrow' && invoice.escrow_address && (
+              <FundEscrowButton
+                escrowAddress={invoice.escrow_address as `0x${string}`}
+                amount={invoice.amount.toString()}
+                onSuccess={handlePaymentSuccess}
+                onError={handlePaymentError}
+              />
+            )}
+
+            {invoice.payment_type === 'escrow' && !invoice.escrow_address && (
               <p className="text-sm text-muted-foreground text-center">
-                Escrow payments coming in Phase 6
+                Escrow not yet created. Please contact the invoice creator.
               </p>
             )}
           </div>

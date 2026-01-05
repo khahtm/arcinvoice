@@ -11,6 +11,10 @@ import { toast } from 'sonner';
 import { Copy, Check, ExternalLink, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import type { Invoice } from '@/types/database';
+import { EscrowStatus } from '@/components/escrow/EscrowStatus';
+import { ReleaseButton } from '@/components/escrow/ReleaseButton';
+import { RefundButton } from '@/components/escrow/RefundButton';
+import { CreateEscrowButton } from '@/components/escrow/CreateEscrowButton';
 
 const statusColors: Record<string, string> = {
   draft: 'bg-gray-500',
@@ -53,6 +57,48 @@ export default function InvoiceDetailPage({
       setCopied(true);
       toast.success('Payment link copied!');
       setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleReleaseSuccess = async (txHash: string) => {
+    try {
+      await fetch(`/api/invoices/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'released', tx_hash: txHash }),
+      });
+      toast.success('Funds released successfully!');
+      setInvoice((prev) => prev ? { ...prev, status: 'released', tx_hash: txHash } : null);
+    } catch {
+      toast.error('Status update failed, but funds were released');
+    }
+  };
+
+  const handleRefundSuccess = async (txHash: string) => {
+    try {
+      await fetch(`/api/invoices/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'refunded', tx_hash: txHash }),
+      });
+      toast.success('Funds refunded successfully!');
+      setInvoice((prev) => prev ? { ...prev, status: 'refunded', tx_hash: txHash } : null);
+    } catch {
+      toast.error('Status update failed, but funds were refunded');
+    }
+  };
+
+  const handleEscrowCreated = async (escrowAddress: string, txHash: string) => {
+    try {
+      await fetch(`/api/invoices/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ escrow_address: escrowAddress }),
+      });
+      toast.success('Escrow contract created!');
+      setInvoice((prev) => prev ? { ...prev, escrow_address: escrowAddress } : null);
+    } catch {
+      toast.error('Failed to save escrow address. Please copy it: ' + escrowAddress);
     }
   };
 
@@ -189,6 +235,45 @@ export default function InvoiceDetailPage({
           <p>Recipient: {truncateAddress(invoice.creator_wallet)}</p>
         </div>
       </Card>
+
+      {/* Create Escrow Contract */}
+      {invoice.payment_type === 'escrow' && !invoice.escrow_address && (
+        <Card className="p-6 space-y-4 border-yellow-500/50 bg-yellow-500/5">
+          <h2 className="font-semibold">Create Escrow Contract</h2>
+          <p className="text-sm text-muted-foreground">
+            Deploy an escrow contract to enable secure payments for this invoice.
+            The contract will hold funds until you release them.
+          </p>
+          <CreateEscrowButton
+            invoiceId={invoice.id}
+            amount={invoice.amount}
+            autoReleaseDays={invoice.auto_release_days || 30}
+            onSuccess={handleEscrowCreated}
+          />
+        </Card>
+      )}
+
+      {/* Escrow Management */}
+      {invoice.payment_type === 'escrow' && invoice.escrow_address && (
+        <Card className="p-6 space-y-4">
+          <h2 className="font-semibold">Escrow Management</h2>
+
+          <EscrowStatus escrowAddress={invoice.escrow_address as `0x${string}`} />
+
+          {invoice.status === 'funded' && (
+            <div className="flex gap-4 pt-4 border-t">
+              <ReleaseButton
+                escrowAddress={invoice.escrow_address as `0x${string}`}
+                onSuccess={handleReleaseSuccess}
+              />
+              <RefundButton
+                escrowAddress={invoice.escrow_address as `0x${string}`}
+                onSuccess={handleRefundSuccess}
+              />
+            </div>
+          )}
+        </Card>
+      )}
     </div>
   );
 }

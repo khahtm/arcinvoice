@@ -7,6 +7,9 @@ const updateSchema = z.object({
   description: z.string().min(1).max(500).optional(),
   client_name: z.string().max(255).optional().nullable(),
   client_email: z.string().email().optional().nullable(),
+  escrow_address: z.string().regex(/^0x[a-fA-F0-9]{40}$/).optional(),
+  status: z.enum(['pending', 'funded', 'released', 'refunded']).optional(),
+  tx_hash: z.string().regex(/^0x[a-fA-F0-9]{64}$/).optional(),
 }).strict();
 
 // GET is intentionally public - payers need to view invoice details
@@ -68,8 +71,11 @@ export async function PATCH(
       return Response.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Only allow updates on pending/draft invoices
-    if (!['pending', 'draft'].includes(existing.status)) {
+    // Check what we're trying to update
+    const isStatusUpdate = 'status' in validatedData || 'tx_hash' in validatedData || 'escrow_address' in validatedData;
+
+    // Only allow content updates on pending/draft invoices
+    if (!isStatusUpdate && !['pending', 'draft'].includes(existing.status)) {
       return Response.json(
         { error: 'Cannot update invoice after payment' },
         { status: 400 }
