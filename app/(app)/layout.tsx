@@ -2,17 +2,15 @@
 
 import { useEffect } from 'react';
 import { useAccount } from 'wagmi';
+import { Providers } from './providers';
 import { ConnectButton } from '@/components/wallet/ConnectButton';
 import { useSession } from '@/hooks/useSession';
 import { useSIWE } from '@/hooks/useSIWE';
 import { MobileNav } from '@/components/layout/MobileNav';
 import { toast } from 'sonner';
 
-export default function AuthLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+// Inner component that uses wagmi hooks (must be inside Providers)
+function AuthContent({ children }: { children: React.ReactNode }) {
   const { address, isConnected } = useAccount();
   const { isAuthenticated, isLoading: sessionLoading, refresh } = useSession();
   const { signIn, signOut, isLoading: siweLoading } = useSIWE();
@@ -74,5 +72,18 @@ export default function AuthLayout({
     <div className="min-h-screen bg-background flex flex-col">
       <MobileNav>{children}</MobileNav>
     </div>
+  );
+}
+
+// Main layout wraps everything in Providers
+export default function AppLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <Providers>
+      <AuthContent>{children}</AuthContent>
+    </Providers>
   );
 }

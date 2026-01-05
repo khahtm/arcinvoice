@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, use } from 'react';
-import { useRouter } from 'next/navigation';
+import { useAccount } from 'wagmi';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,9 @@ import { EscrowStatus } from '@/components/escrow/EscrowStatus';
 import { ReleaseButton } from '@/components/escrow/ReleaseButton';
 import { RefundButton } from '@/components/escrow/RefundButton';
 import { CreateEscrowButton } from '@/components/escrow/CreateEscrowButton';
+import { ReleaseMilestoneButton } from '@/components/escrow/ReleaseMilestoneButton';
+import { useMilestones } from '@/hooks/useMilestones';
+import { DisputePanel } from '@/components/dispute/DisputePanel';
 
 const statusColors: Record<string, string> = {
   draft: 'bg-gray-500',
@@ -30,11 +33,17 @@ export default function InvoiceDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const router = useRouter();
+  const { address: walletAddress } = useAccount();
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+
+  // Fetch milestones for v2/v3 contracts
+  const hasMilestones = invoice?.contract_version === 2 || invoice?.contract_version === 3;
+  const { milestones, refetch: refetchMilestones } = useMilestones(
+    hasMilestones ? invoice?.id ?? null : null
+  );
 
   useEffect(() => {
     fetch(`/api/invoices/${id}`)
@@ -88,7 +97,34 @@ export default function InvoiceDetailPage({
     }
   };
 
-  const handleEscrowCreated = async (escrowAddress: string, txHash: string) => {
+  const handleMilestoneReleaseSuccess = async (milestoneId: string) => {
+    // Update milestone status in DB
+    try {
+      await fetch(`/api/invoices/${id}/milestones/${milestoneId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'released' }),
+      });
+      await refetchMilestones();
+
+      // Check if all milestones released
+      const allReleased = milestones.every(
+        (m) => m.id === milestoneId || m.status === 'released'
+      );
+      if (allReleased) {
+        await fetch(`/api/invoices/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'released' }),
+        });
+        setInvoice((prev) => (prev ? { ...prev, status: 'released' } : null));
+      }
+    } catch {
+      toast.error('Failed to update milestone status');
+    }
+  };
+
+  const handleEscrowCreated = async (escrowAddress: string, _txHash: string) => {
     try {
       await fetch(`/api/invoices/${id}`, {
         method: 'PATCH',
@@ -248,6 +284,7 @@ export default function InvoiceDetailPage({
             invoiceId={invoice.id}
             amount={invoice.amount}
             autoReleaseDays={invoice.auto_release_days || 30}
+            milestones={hasMilestones ? milestones : undefined}
             onSuccess={handleEscrowCreated}
           />
         </Card>
@@ -256,11 +293,65 @@ export default function InvoiceDetailPage({
       {/* Escrow Management */}
       {invoice.payment_type === 'escrow' && invoice.escrow_address && (
         <Card className="p-6 space-y-4">
-          <h2 className="font-semibold">Escrow Management</h2>
+          <h2 className="font-semibold">
+            {hasMilestones ? 'Milestone Escrow' : 'Escrow Management'}
+          </h2>
 
-          <EscrowStatus escrowAddress={invoice.escrow_address as `0x${string}`} />
+          <EscrowStatus
+            escrowAddress={invoice.escrow_address as `0x${string}`}
+            contractVersion={invoice.contract_version}
+          />
 
-          {invoice.status === 'funded' && (
+          {/* V3: Show milestones with release buttons for funded milestones */}
+          {hasMilestones && milestones.length > 0 && (
+            <div className="space-y-3 border-t pt-4">
+              <h3 className="text-sm font-medium text-muted-foreground">
+                Milestones ({milestones.filter((m) => m.status === 'released').length}/
+                {milestones.length} released)
+              </h3>
+              {milestones.map((milestone, index) => (
+                <div
+                  key={milestone.id}
+                  className="flex items-center justify-between p-3 border rounded-lg"
+                >
+                  <div>
+                    <p className="font-medium">
+                      Milestone {index + 1}: {formatUSDC(milestone.amount)}
+                    </p>
+                    <p className="text-sm text-muted-foreground line-clamp-1">
+                      {milestone.description}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      variant={
+                        milestone.status === 'released'
+                          ? 'default'
+                          : milestone.status === 'funded'
+                            ? 'secondary'
+                            : 'outline'
+                      }
+                    >
+                      {milestone.status}
+                    </Badge>
+
+                    {/* Creator releases funded milestones (V3: no approval step) */}
+                    {milestone.status === 'funded' &&
+                      walletAddress?.toLowerCase() === invoice.creator_wallet?.toLowerCase() && (
+                        <ReleaseMilestoneButton
+                          escrowAddress={invoice.escrow_address as `0x${string}`}
+                          milestoneIndex={index}
+                          onSuccess={() => handleMilestoneReleaseSuccess(milestone.id)}
+                        />
+                      )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* V1: Original release/refund buttons */}
+          {!hasMilestones && invoice.status === 'funded' && (
             <div className="flex gap-4 pt-4 border-t">
               <ReleaseButton
                 escrowAddress={invoice.escrow_address as `0x${string}`}
@@ -272,7 +363,28 @@ export default function InvoiceDetailPage({
               />
             </div>
           )}
+
+          {/* V3: Refund button only (no full release) */}
+          {hasMilestones && (invoice.status === 'funded' || invoice.status === 'pending') && (
+            <div className="pt-4 border-t">
+              <RefundButton
+                escrowAddress={invoice.escrow_address as `0x${string}`}
+                onSuccess={handleRefundSuccess}
+              />
+            </div>
+          )}
         </Card>
+      )}
+
+      {/* Dispute Panel */}
+      {invoice.payment_type === 'escrow' && invoice.escrow_address && (
+        <DisputePanel
+          invoiceId={invoice.id}
+          invoiceAmount={invoice.amount}
+          escrowAddress={invoice.escrow_address as `0x${string}`}
+          creatorWallet={invoice.creator_wallet}
+          invoiceStatus={invoice.status}
+        />
       )}
     </div>
   );

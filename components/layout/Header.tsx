@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ConnectButton } from '@/components/wallet/ConnectButton';
@@ -19,7 +20,13 @@ export function Header({ onMenuClick }: HeaderProps) {
       >
         <Menu className="h-5 w-5" />
       </Button>
-      <h1 className="text-xl font-bold">Arc Invoice</h1>
+      <Image
+        src="/logo.png"
+        alt="Arc Invoice"
+        width={160}
+        height={40}
+        className="h-10 w-auto"
+      />
       <div className="ml-auto">
         <ConnectButton />
       </div>
