@@ -1,21 +1,18 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAccount } from 'wagmi';
 import { ConnectButton } from '@/components/wallet/ConnectButton';
 import { useSession } from '@/hooks/useSession';
 import { useSIWE } from '@/hooks/useSIWE';
-import { Button } from '@/components/ui/button';
+import { MobileNav } from '@/components/layout/MobileNav';
 import { toast } from 'sonner';
-import Link from 'next/link';
 
 export default function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const router = useRouter();
   const { address, isConnected } = useAccount();
   const { isAuthenticated, isLoading: sessionLoading, refresh } = useSession();
   const { signIn, signOut, isLoading: siweLoading } = useSIWE();
@@ -74,21 +71,8 @@ export default function AuthLayout({
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/invoices" className="text-xl font-bold">
-            Arc Invoice
-          </Link>
-          <div className="flex items-center gap-4">
-            <Link href="/invoices/new">
-              <Button>New Invoice</Button>
-            </Link>
-            <ConnectButton />
-          </div>
-        </div>
-      </header>
-      <main className="container mx-auto px-4 py-8">{children}</main>
+    <div className="min-h-screen bg-background flex flex-col">
+      <MobileNav>{children}</MobileNav>
     </div>
   );
 }

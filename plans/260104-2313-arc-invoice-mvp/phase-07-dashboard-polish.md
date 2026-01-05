@@ -8,8 +8,9 @@
 ## Overview
 
 - **Priority:** P2
-- **Status:** Pending
+- **Status:** Done
 - **Effort:** 2 days
+- **Completed:** 2026-01-05
 
 Build dashboard overview and polish user experience.
 
@@ -509,27 +510,27 @@ export default function HomePage() {
 
 ## Todo List
 
-- [ ] Create Header component
-- [ ] Create Sidebar component
-- [ ] Create auth layout with sidebar
-- [ ] Create StatCard component
-- [ ] Create Dashboard page with stats
-- [ ] Create CopyLinkButton component
-- [ ] Create Invoice detail page
-- [ ] Create Settings page
-- [ ] Update landing page
-- [ ] Test responsive design
-- [ ] Add loading skeletons
+- [x] Create Header component
+- [x] Create Sidebar component
+- [x] Create auth layout with sidebar
+- [x] Create StatCard component
+- [x] Create Dashboard page with stats
+- [x] Create CopyLinkButton component (already existed in invoice detail)
+- [x] Create Invoice detail page (already existed)
+- [x] Create Settings page
+- [x] Update landing page
+- [x] Test responsive design
+- [x] Add loading skeletons
 
 ## Success Criteria
 
-- [ ] Dashboard shows accurate stats
-- [ ] Recent invoices display
-- [ ] Copy link works
-- [ ] Invoice detail shows all info
-- [ ] Escrow actions work from detail
-- [ ] Settings page functional
-- [ ] Mobile responsive
+- [x] Dashboard shows accurate stats
+- [x] Recent invoices display
+- [x] Copy link works
+- [x] Invoice detail shows all info
+- [x] Escrow actions work from detail
+- [x] Settings page functional
+- [x] Mobile responsive
 
 ## Next Steps
 
