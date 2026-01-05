@@ -1,13 +1,17 @@
 'use client';
 
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { PaymentTypeSelector } from './PaymentTypeSelector';
+import { MilestoneInputList } from './MilestoneInputList';
 import { invoiceSchema, type InvoiceFormData } from '@/lib/validation';
+import type { MilestoneInput } from '@/types/database';
 
 interface InvoiceFormProps {
   onSubmit: (data: InvoiceFormData) => Promise<void>;
@@ -15,6 +19,9 @@ interface InvoiceFormProps {
 }
 
 export function InvoiceForm({ onSubmit, isLoading }: InvoiceFormProps) {
+  const [enableMilestones, setEnableMilestones] = useState(false);
+  const [milestones, setMilestones] = useState<MilestoneInput[]>([]);
+
   const {
     register,
     handleSubmit,
@@ -30,6 +37,7 @@ export function InvoiceForm({ onSubmit, isLoading }: InvoiceFormProps) {
   });
 
   const paymentType = watch('payment_type');
+  const amount = watch('amount') || 0;
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -84,19 +92,58 @@ export function InvoiceForm({ onSubmit, isLoading }: InvoiceFormProps) {
       </div>
 
       {paymentType === 'escrow' && (
-        <div>
-          <Label htmlFor="auto_release_days">Auto-release after (days)</Label>
-          <Input
-            id="auto_release_days"
-            type="number"
-            min="1"
-            max="90"
-            {...register('auto_release_days', { valueAsNumber: true })}
-          />
-          <p className="text-sm text-muted-foreground mt-1">
-            Funds auto-release if no dispute is raised
-          </p>
-        </div>
+        <>
+          <div>
+            <Label htmlFor="auto_release_days">Auto-release after (days)</Label>
+            <Input
+              id="auto_release_days"
+              type="number"
+              min="1"
+              max="90"
+              {...register('auto_release_days', { valueAsNumber: true })}
+            />
+            <p className="text-sm text-muted-foreground mt-1">
+              Funds auto-release if no dispute is raised
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <Label htmlFor="enable-milestones">Enable Milestones</Label>
+              <p className="text-sm text-muted-foreground">
+                Split payment into multiple milestones
+              </p>
+            </div>
+            <Switch
+              id="enable-milestones"
+              checked={enableMilestones}
+              onCheckedChange={(checked) => {
+                setEnableMilestones(checked);
+                if (!checked) {
+                  setMilestones([]);
+                  setValue('milestones', undefined);
+                }
+              }}
+            />
+          </div>
+
+          {enableMilestones && amount > 0 && (
+            <MilestoneInputList
+              milestones={milestones}
+              onChange={(newMilestones) => {
+                setMilestones(newMilestones);
+                setValue('milestones', newMilestones);
+              }}
+              totalAmount={amount}
+            />
+          )}
+
+          {enableMilestones && amount <= 0 && (
+            <p className="text-sm text-muted-foreground">
+              Enter an amount above to add milestones
+            </p>
+          )}
+        </>
       )}
 
       <Button type="submit" className="w-full" disabled={isLoading}>

@@ -169,3 +169,253 @@ export const ESCROW_ABI = [
     ],
   },
 ] as const;
+
+// ============================================
+// V2 ABIs (Milestone Escrow + Fees)
+// ============================================
+
+// FeeCollector ABI
+export const FEE_COLLECTOR_ABI = [
+  {
+    name: 'FEE_BPS',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  {
+    name: 'totalCollected',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  {
+    name: 'calculateFee',
+    type: 'function',
+    stateMutability: 'pure',
+    inputs: [{ name: 'amount', type: 'uint256' }],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  {
+    name: 'calculatePayerAmount',
+    type: 'function',
+    stateMutability: 'pure',
+    inputs: [{ name: 'invoiceAmount', type: 'uint256' }],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  {
+    name: 'calculateCreatorAmount',
+    type: 'function',
+    stateMutability: 'pure',
+    inputs: [{ name: 'invoiceAmount', type: 'uint256' }],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  {
+    name: 'getBalance',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  {
+    name: 'FeeCollected',
+    type: 'event',
+    inputs: [
+      { name: 'from', type: 'address', indexed: true },
+      { name: 'amount', type: 'uint256', indexed: false },
+    ],
+  },
+] as const;
+
+// Milestone Factory ABI
+export const MILESTONE_FACTORY_ABI = [
+  {
+    name: 'createEscrow',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'invoiceId', type: 'bytes32' },
+      { name: 'milestoneAmounts', type: 'uint256[]' },
+      { name: 'autoReleaseDays', type: 'uint256' },
+    ],
+    outputs: [{ name: '', type: 'address' }],
+  },
+  {
+    name: 'getEscrow',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [{ name: 'invoiceId', type: 'bytes32' }],
+    outputs: [{ name: '', type: 'address' }],
+  },
+  {
+    name: 'getEscrowCount',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  {
+    name: 'EscrowCreated',
+    type: 'event',
+    inputs: [
+      { name: 'invoiceId', type: 'bytes32', indexed: true },
+      { name: 'escrow', type: 'address', indexed: true },
+      { name: 'creator', type: 'address', indexed: true },
+      { name: 'totalAmount', type: 'uint256', indexed: false },
+      { name: 'milestoneCount', type: 'uint256', indexed: false },
+    ],
+  },
+] as const;
+
+// Milestone Escrow ABI
+export const MILESTONE_ESCROW_ABI = [
+  {
+    name: 'deposit',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [],
+    outputs: [],
+  },
+  {
+    name: 'approveMilestone',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'index', type: 'uint256' }],
+    outputs: [],
+  },
+  {
+    name: 'releaseMilestone',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'index', type: 'uint256' }],
+    outputs: [],
+  },
+  {
+    name: 'refund',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [],
+    outputs: [],
+  },
+  {
+    name: 'autoRelease',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [],
+    outputs: [],
+  },
+  {
+    name: 'getDetails',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [
+      { name: '_creator', type: 'address' },
+      { name: '_payer', type: 'address' },
+      { name: '_totalAmount', type: 'uint256' },
+      { name: '_releasedAmount', type: 'uint256' },
+      { name: '_state', type: 'uint8' },
+      { name: '_fundedAt', type: 'uint256' },
+      { name: '_autoReleaseDays', type: 'uint256' },
+      { name: '_milestoneCount', type: 'uint256' },
+    ],
+  },
+  {
+    name: 'getMilestone',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [{ name: 'index', type: 'uint256' }],
+    outputs: [
+      { name: 'amount', type: 'uint256' },
+      { name: 'approved', type: 'bool' },
+      { name: 'released', type: 'bool' },
+    ],
+  },
+  {
+    name: 'getMilestoneCount',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  {
+    name: 'state',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint8' }],
+  },
+  {
+    name: 'canAutoRelease',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'bool' }],
+  },
+  {
+    name: 'totalAmount',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  {
+    name: 'releasedAmount',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  {
+    name: 'Funded',
+    type: 'event',
+    inputs: [
+      { name: 'payer', type: 'address', indexed: true },
+      { name: 'amount', type: 'uint256', indexed: false },
+      { name: 'timestamp', type: 'uint256', indexed: false },
+    ],
+  },
+  {
+    name: 'MilestoneApproved',
+    type: 'event',
+    inputs: [{ name: 'index', type: 'uint256', indexed: true }],
+  },
+  {
+    name: 'MilestoneReleased',
+    type: 'event',
+    inputs: [
+      { name: 'index', type: 'uint256', indexed: true },
+      { name: 'creatorAmount', type: 'uint256', indexed: false },
+      { name: 'fee', type: 'uint256', indexed: false },
+    ],
+  },
+  {
+    name: 'Refunded',
+    type: 'event',
+    inputs: [
+      { name: 'recipient', type: 'address', indexed: true },
+      { name: 'amount', type: 'uint256', indexed: false },
+    ],
+  },
+  {
+    name: 'FullyReleased',
+    type: 'event',
+    inputs: [],
+  },
+  {
+    name: 'splitFunds',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'payerAmount', type: 'uint256' }],
+    outputs: [],
+  },
+  {
+    name: 'FundsSplit',
+    type: 'event',
+    inputs: [
+      { name: 'payerAmount', type: 'uint256', indexed: false },
+      { name: 'creatorAmount', type: 'uint256', indexed: false },
+    ],
+  },
+] as const;

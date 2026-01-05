@@ -39,23 +39,52 @@ export async function POST(req: Request) {
     const validatedData = invoiceSchema.parse(body);
 
     const supabase = await createClient();
-    const { data, error } = await supabase
+
+    // Determine contract version: v2 if milestones, v1 otherwise
+    const hasMilestones = validatedData.milestones && validatedData.milestones.length > 0;
+    const contractVersion = hasMilestones ? 2 : 1;
+
+    // Create invoice (exclude milestones from insert)
+    const { milestones, ...invoiceData } = validatedData;
+    const { data: invoice, error: invoiceError } = await supabase
       .from('invoices')
       .insert({
-        ...validatedData,
-        auto_release_days: validatedData.auto_release_days ?? 14,
+        ...invoiceData,
+        auto_release_days: invoiceData.auto_release_days ?? 14,
         short_code: generateShortCode(),
         creator_wallet: walletAddress,
         status: 'pending',
+        contract_version: contractVersion,
       })
       .select()
       .single();
 
-    if (error) {
-      return Response.json({ error: error.message }, { status: 500 });
+    if (invoiceError) {
+      return Response.json({ error: invoiceError.message }, { status: 500 });
     }
 
-    return Response.json({ invoice: data }, { status: 201 });
+    // Create milestones if provided
+    if (milestones && milestones.length > 0) {
+      const milestonesWithInvoiceId = milestones.map((m, i) => ({
+        invoice_id: invoice.id,
+        order_index: i,
+        amount: m.amount,
+        description: m.description,
+        status: 'pending',
+      }));
+
+      const { error: milestonesError } = await supabase
+        .from('milestones')
+        .insert(milestonesWithInvoiceId);
+
+      if (milestonesError) {
+        // Rollback: delete the invoice if milestones failed
+        await supabase.from('invoices').delete().eq('id', invoice.id);
+        return Response.json({ error: milestonesError.message }, { status: 500 });
+      }
+    }
+
+    return Response.json({ invoice }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return Response.json({ error: error.issues }, { status: 400 });
