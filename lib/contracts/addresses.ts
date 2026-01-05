@@ -6,8 +6,8 @@ export const CONTRACTS = {
   5042002: {
     // USDC contract address on Arc testnet
     // Note: On Arc, USDC is native but has ERC20 wrapper for compatibility
-    USDC: '0x3600000000000000000000000000000000000000' as const, // TODO: Update with actual address
-    FACTORY: '' as const, // Deploy in Phase 5
+    USDC: '0x3600000000000000000000000000000000000000' as const,
+    FACTORY: '0x07a7be2be306a4C37c7E526235BEcB7BF4C018FB' as const,
   },
   // Arc Mainnet (Chain ID: 5042001) - Placeholder until mainnet launches
   5042001: {

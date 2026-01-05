@@ -2,7 +2,15 @@ import { HardhatUserConfig } from 'hardhat/config';
 import '@nomicfoundation/hardhat-toolbox';
 import * as dotenv from 'dotenv';
 
+// Load .env.local first, then .env as fallback
+dotenv.config({ path: '.env.local' });
 dotenv.config();
+
+// Get private key (trimmed, remove quotes if present)
+let privateKey = process.env.DEPLOYER_PRIVATE_KEY?.trim();
+if (privateKey) {
+  privateKey = privateKey.replace(/^["']|["']$/g, '');
+}
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -19,17 +27,14 @@ const config: HardhatUserConfig = {
       chainId: 31337,
     },
     arcTestnet: {
-      url: process.env.ARC_TESTNET_RPC_URL || 'https://arc-testnet.drpc.org',
-      accounts: process.env.DEPLOYER_PRIVATE_KEY
-        ? [process.env.DEPLOYER_PRIVATE_KEY]
-        : [],
+      url: process.env.ARC_TESTNET_RPC_URL || 'https://rpc.testnet.arc.network',
+      accounts: privateKey ? [privateKey] : [],
       chainId: 5042002,
+      timeout: 120000,
     },
     arcMainnet: {
       url: process.env.ARC_MAINNET_RPC_URL || 'https://rpc.arc.circle.com',
-      accounts: process.env.DEPLOYER_PRIVATE_KEY
-        ? [process.env.DEPLOYER_PRIVATE_KEY]
-        : [],
+      accounts: privateKey ? [privateKey] : [],
       chainId: 5042001,
     },
   },

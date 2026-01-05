@@ -1,15 +1,23 @@
-import { ethers, run, network } from 'hardhat';
+const { ethers, run, network } = require('hardhat');
+const dotenv = require('dotenv');
+
+// Load env files
+dotenv.config({ path: '.env.local' });
+dotenv.config();
 
 async function main() {
-  const [deployer] = await ethers.getSigners();
+  const signers = await ethers.getSigners();
+  if (signers.length === 0) {
+    throw new Error('No signers found. Check DEPLOYER_PRIVATE_KEY in .env.local');
+  }
+  const deployer = signers[0];
   console.log('Deploying with:', deployer.address);
 
   // Get USDC address for network
-  const USDC_ADDRESS = process.env.USDC_ADDRESS;
+  const USDC_ADDRESS = process.env.USDC_ADDRESS?.trim();
   if (!USDC_ADDRESS) {
-    throw new Error('USDC_ADDRESS not set');
+    throw new Error('USDC_ADDRESS not set. Add to .env.local: USDC_ADDRESS=0x3600000000000000000000000000000000000000');
   }
-
   console.log('USDC Address:', USDC_ADDRESS);
 
   // Deploy Factory
