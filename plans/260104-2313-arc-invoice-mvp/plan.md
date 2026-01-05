@@ -39,7 +39,7 @@ See: `../reports/brainstorm-260104-2309-arc-invoice-mvp-architecture.md`
 | 5 | Smart Contracts | Done | 2d | [phase-05](./phase-05-smart-contracts.md) |
 | 6 | Escrow Integration | Done | 3d | [phase-06](./phase-06-escrow-integration.md) |
 | 7 | Dashboard & Polish | Done | 2d | [phase-07](./phase-07-dashboard-polish.md) |
-| 8 | Testing & Launch | Pending | 2d | [phase-08](./phase-08-testing-launch.md) |
+| 8 | Testing & Launch | In Progress | 2d | [phase-08](./phase-08-testing-launch.md) |
 
 ## Key Decisions
 
