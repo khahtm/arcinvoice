@@ -3,7 +3,8 @@
 import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useMilestoneEscrow } from '@/hooks/useMilestoneEscrow';
-import { Coins, Loader2 } from 'lucide-react';
+import { useChainGuard } from '@/hooks/useChainGuard';
+import { Coins, Loader2, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ReleaseMilestoneButtonProps {
@@ -19,6 +20,7 @@ export function ReleaseMilestoneButton({
   onSuccess,
   disabled,
 }: ReleaseMilestoneButtonProps) {
+  const { isWrongNetwork, switchToArc } = useChainGuard();
   const { releaseMilestone, isPending, isConfirming, isSuccess, error } =
     useMilestoneEscrow(escrowAddress);
 
@@ -34,6 +36,15 @@ export function ReleaseMilestoneButton({
       toast.error(error.message || 'Failed to release milestone');
     }
   }, [error]);
+
+  if (isWrongNetwork) {
+    return (
+      <Button variant="destructive" onClick={switchToArc} size="sm" className="gap-1">
+        <AlertTriangle className="h-3 w-3" />
+        Switch
+      </Button>
+    );
+  }
 
   const isLoading = isPending || isConfirming;
 

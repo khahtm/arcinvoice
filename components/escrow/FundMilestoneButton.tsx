@@ -5,7 +5,8 @@ import { useAccount } from 'wagmi';
 import { Button } from '@/components/ui/button';
 import { useFundMilestone } from '@/hooks/useFundMilestone';
 import { useUSDCBalance } from '@/hooks/useUSDCBalance';
-import { Loader2 } from 'lucide-react';
+import { useChainGuard } from '@/hooks/useChainGuard';
+import { Loader2, AlertTriangle } from 'lucide-react';
 
 interface FundMilestoneButtonProps {
   escrowAddress: `0x${string}`;
@@ -27,6 +28,7 @@ export function FundMilestoneButton({
   onSuccess,
 }: FundMilestoneButtonProps) {
   const { isConnected, address } = useAccount();
+  const { isWrongNetwork, switchToArc } = useChainGuard();
   const { balanceRaw, isLoading: isBalanceLoading } = useUSDCBalance(address);
   const {
     needsApproval,
@@ -55,6 +57,15 @@ export function FundMilestoneButton({
     return (
       <Button disabled size="sm">
         Connect wallet
+      </Button>
+    );
+  }
+
+  if (isWrongNetwork) {
+    return (
+      <Button variant="destructive" onClick={switchToArc} size="sm" className="gap-1">
+        <AlertTriangle className="h-3 w-3" />
+        Switch
       </Button>
     );
   }

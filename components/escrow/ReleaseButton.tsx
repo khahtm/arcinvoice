@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect } from 'react';
+import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useReleaseEscrow } from '@/hooks/useReleaseEscrow';
+import { useChainGuard } from '@/hooks/useChainGuard';
 
 interface ReleaseButtonProps {
   escrowAddress: `0x${string}`;
@@ -10,6 +12,7 @@ interface ReleaseButtonProps {
 }
 
 export function ReleaseButton({ escrowAddress, onSuccess }: ReleaseButtonProps) {
+  const { isWrongNetwork, switchToArc } = useChainGuard();
   const { release, hash, isPending, isConfirming, isSuccess } =
     useReleaseEscrow(escrowAddress);
 
@@ -18,6 +21,15 @@ export function ReleaseButton({ escrowAddress, onSuccess }: ReleaseButtonProps) 
       onSuccess(hash);
     }
   }, [isSuccess, hash, onSuccess]);
+
+  if (isWrongNetwork) {
+    return (
+      <Button variant="destructive" onClick={switchToArc} className="w-full gap-2">
+        <AlertTriangle className="h-4 w-4" />
+        Switch to Arc
+      </Button>
+    );
+  }
 
   return (
     <Button

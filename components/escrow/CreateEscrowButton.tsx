@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useAccount } from 'wagmi';
+import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCreateEscrow } from '@/hooks/useCreateEscrow';
 import { useCreateMilestoneEscrow } from '@/hooks/useCreateMilestoneEscrow';
+import { useChainGuard } from '@/hooks/useChainGuard';
 import { ConnectButton } from '@/components/wallet/ConnectButton';
 import type { Milestone } from '@/types/database';
 
@@ -23,7 +24,7 @@ export function CreateEscrowButton({
   milestones,
   onSuccess,
 }: CreateEscrowButtonProps) {
-  const { isConnected } = useAccount();
+  const { isConnected, isWrongNetwork, switchToArc } = useChainGuard();
   const isV2 = milestones && milestones.length > 0;
 
   // V1 hook for basic escrow
@@ -54,6 +55,15 @@ export function CreateEscrowButton({
         </p>
         <ConnectButton />
       </div>
+    );
+  }
+
+  if (isWrongNetwork) {
+    return (
+      <Button variant="destructive" onClick={switchToArc} className="w-full gap-2">
+        <AlertTriangle className="h-4 w-4" />
+        Switch to Arc Testnet
+      </Button>
     );
   }
 

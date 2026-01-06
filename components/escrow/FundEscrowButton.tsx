@@ -2,9 +2,11 @@
 
 import { useEffect } from 'react';
 import { useAccount } from 'wagmi';
+import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useFundEscrow } from '@/hooks/useFundEscrow';
 import { useUSDCBalance } from '@/hooks/useUSDCBalance';
+import { useChainGuard } from '@/hooks/useChainGuard';
 import { parseUnits } from 'viem';
 
 interface FundEscrowButtonProps {
@@ -23,6 +25,7 @@ export function FundEscrowButton({
   onError,
 }: FundEscrowButtonProps) {
   const { address, isConnected } = useAccount();
+  const { isWrongNetwork, switchToArc } = useChainGuard();
   const { balanceRaw } = useUSDCBalance(address);
   const isV2 = contractVersion === 2;
   const {
@@ -51,6 +54,15 @@ export function FundEscrowButton({
 
   if (!isConnected) {
     return <Button disabled className="w-full">Connect wallet to fund</Button>;
+  }
+
+  if (isWrongNetwork) {
+    return (
+      <Button variant="destructive" onClick={switchToArc} className="w-full gap-2">
+        <AlertTriangle className="h-4 w-4" />
+        Switch to Arc Testnet
+      </Button>
+    );
   }
 
   // Check loading state FIRST for V2 (before balance check uses wrong amount)

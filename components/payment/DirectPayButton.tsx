@@ -5,9 +5,10 @@ import { useAccount } from 'wagmi';
 import { Button } from '@/components/ui/button';
 import { useUSDCTransfer } from '@/hooks/useUSDCTransfer';
 import { useUSDCBalance } from '@/hooks/useUSDCBalance';
+import { useChainGuard } from '@/hooks/useChainGuard';
 import { formatUSDC } from '@/lib/utils';
 import { parseUnits } from 'viem';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 
 interface DirectPayButtonProps {
   amount: number;
@@ -23,6 +24,7 @@ export function DirectPayButton({
   onError,
 }: DirectPayButtonProps) {
   const { address, isConnected } = useAccount();
+  const { isWrongNetwork, switchToArc } = useChainGuard();
   const { balance, balanceRaw } = useUSDCBalance(address);
   const { transfer, isPending, isConfirming, isSuccess, hash, error, reset } =
     useUSDCTransfer();
@@ -58,6 +60,15 @@ export function DirectPayButton({
     return (
       <Button disabled className="w-full" size="lg">
         Connect wallet to pay
+      </Button>
+    );
+  }
+
+  if (isWrongNetwork) {
+    return (
+      <Button variant="destructive" onClick={switchToArc} className="w-full gap-2" size="lg">
+        <AlertTriangle className="h-4 w-4" />
+        Switch to Arc Testnet
       </Button>
     );
   }
