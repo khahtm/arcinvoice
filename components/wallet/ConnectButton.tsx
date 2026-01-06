@@ -1,6 +1,7 @@
 'use client';
 
-import { useAccount, useConnect, useDisconnect } from 'wagmi';
+import { useAccount, useConnect, useDisconnect, useChainId, useSwitchChain } from 'wagmi';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -10,14 +11,23 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Wallet, LogOut, Copy, Check } from 'lucide-react';
 import { truncateAddress } from '@/lib/utils';
-import { useState } from 'react';
+import { arcTestnet } from '@/lib/chains/arc';
 import { toast } from 'sonner';
 
 export function ConnectButton() {
   const { address, isConnected } = useAccount();
   const { connect, connectors, isPending } = useConnect();
   const { disconnect } = useDisconnect();
+  const chainId = useChainId();
+  const { switchChain } = useSwitchChain();
   const [copied, setCopied] = useState(false);
+
+  // Auto-switch to Arc testnet when connected to wrong chain
+  useEffect(() => {
+    if (isConnected && chainId !== arcTestnet.id) {
+      switchChain({ chainId: arcTestnet.id });
+    }
+  }, [isConnected, chainId, switchChain]);
 
   const handleCopy = async () => {
     if (address) {
