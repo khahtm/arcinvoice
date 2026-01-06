@@ -8,9 +8,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Wallet, LogOut, Copy, Check } from 'lucide-react';
+import { Wallet, LogOut, Copy, Check, ChevronDown, Loader2 } from 'lucide-react';
 import { truncateAddress } from '@/lib/utils';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { toast } from 'sonner';
 
 export function ConnectButton() {
@@ -18,6 +18,32 @@ export function ConnectButton() {
   const { connect, connectors, isPending } = useConnect();
   const { disconnect } = useDisconnect();
   const [copied, setCopied] = useState(false);
+  const [connectingId, setConnectingId] = useState<string | null>(null);
+
+  // Filter unique connectors by name to avoid duplicates
+  const uniqueConnectors = useMemo(() => {
+    const seen = new Set<string>();
+    return connectors.filter((connector) => {
+      const key = connector.name.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [connectors]);
+
+  const handleConnect = async (connectorId: string) => {
+    const connector = connectors.find((c) => c.id === connectorId);
+    if (!connector) return;
+
+    setConnectingId(connectorId);
+    try {
+      await connect({ connector });
+    } catch {
+      toast.error('Failed to connect wallet');
+    } finally {
+      setConnectingId(null);
+    }
+  };
 
   const handleCopy = async () => {
     if (address) {
@@ -28,6 +54,7 @@ export function ConnectButton() {
     }
   };
 
+  // Connected state - show address dropdown
   if (isConnected && address) {
     return (
       <DropdownMenu>
@@ -55,14 +82,36 @@ export function ConnectButton() {
     );
   }
 
+  // Disconnected state - show wallet selection dropdown
   return (
-    <Button
-      onClick={() => connect({ connector: connectors[0] })}
-      disabled={isPending}
-      className="gap-2"
-    >
-      <Wallet className="h-4 w-4" />
-      {isPending ? 'Connecting...' : 'Connect Wallet'}
-    </Button>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button disabled={isPending} className="gap-2">
+          {isPending ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Wallet className="h-4 w-4" />
+          )}
+          {isPending ? 'Connecting...' : 'Connect Wallet'}
+          <ChevronDown className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {uniqueConnectors.map((connector) => (
+          <DropdownMenuItem
+            key={connector.id}
+            onClick={() => handleConnect(connector.id)}
+            disabled={connectingId === connector.id}
+          >
+            {connectingId === connector.id ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Wallet className="mr-2 h-4 w-4" />
+            )}
+            {connector.name}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
