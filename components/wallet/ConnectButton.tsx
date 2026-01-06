@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Wallet, LogOut, Copy, Check } from 'lucide-react';
+import { Wallet, LogOut, Copy, Check, AlertTriangle } from 'lucide-react';
 import { truncateAddress } from '@/lib/utils';
 import { arcTestnet } from '@/lib/chains/arc';
 import { toast } from 'sonner';
@@ -69,6 +69,33 @@ export function ConnectButton() {
       setTimeout(() => setCopied(false), 2000);
     }
   };
+
+  const isWrongNetwork = isConnected && chainId !== arcTestnet.id;
+
+  // Handle manual switch for wallets like Rabby
+  const handleSwitchNetwork = async () => {
+    try {
+      switchChain({ chainId: arcTestnet.id });
+    } catch {
+      // If switch fails, try to add the chain
+      await addArcTestnet();
+      switchChain({ chainId: arcTestnet.id });
+    }
+  };
+
+  // Show wrong network warning with switch button
+  if (isConnected && address && isWrongNetwork) {
+    return (
+      <Button
+        variant="destructive"
+        onClick={handleSwitchNetwork}
+        className="gap-2"
+      >
+        <AlertTriangle className="h-4 w-4" />
+        Switch to Arc
+      </Button>
+    );
+  }
 
   if (isConnected && address) {
     return (
