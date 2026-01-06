@@ -5,7 +5,7 @@
       "has": [
         {
           "type": "host",
-          "value": "app.arcinvoice.xyz"
+          "value": "arcinvoice.org"
         }
       ],
       "destination": "/:path/:rest*"
@@ -15,7 +15,7 @@
       "has": [
         {
           "type": "host",
-          "value": "app.arcinvoice.xyz"
+          "value": "arcinvoice.org"
         }
       ],
       "destination": "/dashboard"
