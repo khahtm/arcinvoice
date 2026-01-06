@@ -1,7 +1,8 @@
 'use client';
 
 import Image from 'next/image';
-import { Menu } from 'lucide-react';
+import Link from 'next/link';
+import { Menu, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ConnectButton } from '@/components/wallet/ConnectButton';
 
@@ -27,7 +28,13 @@ export function Header({ onMenuClick }: HeaderProps) {
         height={40}
         className="h-10 w-auto"
       />
-      <div className="ml-auto">
+      <div className="ml-auto flex items-center gap-2">
+        <Button asChild size="sm">
+          <Link href="/invoices/new">
+            <Plus className="h-4 w-4 mr-1" />
+            New Invoice
+          </Link>
+        </Button>
         <ConnectButton />
       </div>
     </header>
