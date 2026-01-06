@@ -3,8 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, FileText, Settings, Plus, BarChart3 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { LayoutDashboard, FileText, Settings, BarChart3 } from 'lucide-react';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -46,14 +45,6 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
           );
         })}
       </nav>
-      <div className="p-4 border-t">
-        <Link href="/invoices/new" onClick={onNavigate}>
-          <Button className="w-full">
-            <Plus className="mr-2 h-4 w-4" />
-            New Invoice
-          </Button>
-        </Link>
-      </div>
     </aside>
   );
 }
