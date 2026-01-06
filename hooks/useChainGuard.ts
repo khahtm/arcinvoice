@@ -41,15 +41,10 @@ export function useChainGuard() {
     }
   }, [connector]);
 
-  // Switch to Arc testnet
+  // Switch to Arc testnet - always add chain first (wallet ignores if exists)
   const switchToArc = useCallback(async () => {
-    try {
-      switchChain({ chainId: arcTestnet.id });
-    } catch {
-      // If switch fails, try to add the chain first
-      await addArcTestnet();
-      switchChain({ chainId: arcTestnet.id });
-    }
+    await addArcTestnet();
+    switchChain({ chainId: arcTestnet.id });
   }, [switchChain, addArcTestnet]);
 
   return {

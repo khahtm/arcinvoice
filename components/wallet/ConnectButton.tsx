@@ -72,15 +72,12 @@ export function ConnectButton() {
 
   const isWrongNetwork = isConnected && chainId !== arcTestnet.id;
 
-  // Handle manual switch for wallets like Rabby
+  // Handle manual switch - always try to add chain first, then switch
   const handleSwitchNetwork = async () => {
-    try {
-      switchChain({ chainId: arcTestnet.id });
-    } catch {
-      // If switch fails, try to add the chain
-      await addArcTestnet();
-      switchChain({ chainId: arcTestnet.id });
-    }
+    // First add the chain (if already exists, wallet ignores this)
+    await addArcTestnet();
+    // Then switch to it
+    switchChain({ chainId: arcTestnet.id });
   };
 
   // Show wrong network warning with switch button
