@@ -1,6 +1,6 @@
 'use client';
 
-import { useAccount, useConnect, useDisconnect, useChainId, useSwitchChain } from 'wagmi';
+import { useAccount, useConnect, useDisconnect, useSwitchChain } from 'wagmi';
 import { useEffect, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,10 +15,10 @@ import { arcTestnet } from '@/lib/chains/arc';
 import { toast } from 'sonner';
 
 export function ConnectButton() {
-  const { address, isConnected, connector } = useAccount();
+  // IMPORTANT: Use chainId from useAccount (actual wallet chain), not useChainId (wagmi config)
+  const { address, isConnected, connector, chainId } = useAccount();
   const { connect, connectors, isPending } = useConnect();
   const { disconnect } = useDisconnect();
-  const chainId = useChainId();
   const { switchChain } = useSwitchChain();
   const [copied, setCopied] = useState(false);
 

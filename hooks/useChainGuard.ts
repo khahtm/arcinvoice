@@ -1,20 +1,24 @@
 'use client';
 
 import { useCallback } from 'react';
-import { useAccount, useChainId, useSwitchChain } from 'wagmi';
+import { useAccount, useSwitchChain } from 'wagmi';
 import { arcTestnet } from '@/lib/chains/arc';
 import { toast } from 'sonner';
 
 /**
  * Hook to guard contract actions - ensures user is on Arc testnet
  * Returns isWrongNetwork flag and switchToArc function
+ *
+ * IMPORTANT: Uses useAccount().chainId to get wallet's ACTUAL chain,
+ * not useChainId() which returns wagmi's configured chain
  */
 export function useChainGuard() {
-  const { isConnected, connector } = useAccount();
-  const chainId = useChainId();
+  // chainId from useAccount reflects the wallet's actual connected chain
+  const { isConnected, connector, chainId } = useAccount();
   const { switchChain } = useSwitchChain();
 
-  const isWrongNetwork = isConnected && chainId !== arcTestnet.id;
+  // Check if wallet is on wrong network (not Arc testnet)
+  const isWrongNetwork = isConnected && chainId !== undefined && chainId !== arcTestnet.id;
 
   // Add Arc testnet to wallet if not present
   const addArcTestnet = useCallback(async () => {
