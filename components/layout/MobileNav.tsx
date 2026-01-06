@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/sheet';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
+import { NetworkWarningBanner } from '@/components/wallet/NetworkWarningBanner';
 
 interface MobileNavProps {
   children: React.ReactNode;
@@ -19,6 +20,7 @@ export function MobileNav({ children }: MobileNavProps) {
 
   return (
     <>
+      <NetworkWarningBanner />
       <Header onMenuClick={() => setOpen(true)} />
 
       <Sheet open={open} onOpenChange={setOpen}>
