@@ -1,7 +1,7 @@
 'use client';
 
 import { useAccount, useConnect, useDisconnect, useChainId, useSwitchChain } from 'wagmi';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -15,19 +15,51 @@ import { arcTestnet } from '@/lib/chains/arc';
 import { toast } from 'sonner';
 
 export function ConnectButton() {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, connector } = useAccount();
   const { connect, connectors, isPending } = useConnect();
   const { disconnect } = useDisconnect();
   const chainId = useChainId();
   const { switchChain } = useSwitchChain();
   const [copied, setCopied] = useState(false);
 
+  // Add Arc testnet to wallet if not present
+  const addArcTestnet = useCallback(async () => {
+    if (!connector) return;
+
+    try {
+      const provider = await connector.getProvider();
+      await (provider as { request: (args: { method: string; params: unknown[] }) => Promise<unknown> }).request({
+        method: 'wallet_addEthereumChain',
+        params: [
+          {
+            chainId: `0x${arcTestnet.id.toString(16)}`,
+            chainName: arcTestnet.name,
+            nativeCurrency: arcTestnet.nativeCurrency,
+            rpcUrls: [arcTestnet.rpcUrls.default.http[0]],
+            blockExplorerUrls: [arcTestnet.blockExplorers?.default.url],
+          },
+        ],
+      });
+      toast.success('Arc Testnet added to wallet');
+    } catch (error) {
+      console.error('Failed to add chain:', error);
+    }
+  }, [connector]);
+
   // Auto-switch to Arc testnet when connected to wrong chain
   useEffect(() => {
     if (isConnected && chainId !== arcTestnet.id) {
-      switchChain({ chainId: arcTestnet.id });
+      switchChain(
+        { chainId: arcTestnet.id },
+        {
+          onError: () => {
+            // Chain not found, try to add it
+            addArcTestnet();
+          },
+        }
+      );
     }
-  }, [isConnected, chainId, switchChain]);
+  }, [isConnected, chainId, switchChain, addArcTestnet]);
 
   const handleCopy = async () => {
     if (address) {
