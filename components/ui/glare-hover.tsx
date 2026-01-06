@@ -6,7 +6,6 @@ import { cn } from '@/lib/utils';
 interface GlareHoverProps {
   children: ReactNode;
   className?: string;
-  glareColor?: string;
   glareOpacity?: number;
   glareSize?: number;
   borderRadius?: string;
@@ -15,9 +14,8 @@ interface GlareHoverProps {
 export function GlareHover({
   children,
   className,
-  glareColor = 'white',
-  glareOpacity = 0.3,
-  glareSize = 200,
+  glareOpacity = 0.4,
+  glareSize = 300,
   borderRadius = '1rem',
 }: GlareHoverProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -35,18 +33,33 @@ export function GlareHover({
   return (
     <div
       ref={containerRef}
-      className={cn('relative overflow-hidden', className)}
+      className={cn('relative overflow-hidden group', className)}
       style={{ borderRadius }}
       onMouseMove={handleMouseMove}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       {children}
+      {/* Glare overlay */}
       <div
-        className="pointer-events-none absolute inset-0 transition-opacity duration-300"
+        className="pointer-events-none absolute inset-0 transition-opacity duration-200"
         style={{
           opacity: isHovered ? 1 : 0,
-          background: `radial-gradient(${glareSize}px circle at ${glarePosition.x}px ${glarePosition.y}px, rgba(255,255,255,${glareOpacity}), transparent 50%)`,
+          background: `
+            radial-gradient(${glareSize}px circle at ${glarePosition.x}px ${glarePosition.y}px,
+              rgba(255,255,255,${glareOpacity}) 0%,
+              rgba(255,255,255,${glareOpacity * 0.5}) 25%,
+              transparent 60%)
+          `,
+          borderRadius,
+        }}
+      />
+      {/* Border glow */}
+      <div
+        className="pointer-events-none absolute inset-0 transition-opacity duration-200"
+        style={{
+          opacity: isHovered ? 1 : 0,
+          boxShadow: `inset 0 0 0 1px rgba(255,255,255,0.3), 0 0 20px rgba(0,0,0,0.1)`,
           borderRadius,
         }}
       />
