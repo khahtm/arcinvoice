@@ -30,8 +30,8 @@ export function MobileNav({ children }: MobileNavProps) {
         </SheetContent>
       </Sheet>
 
-      <div className="flex flex-1">
-        <Sidebar className="hidden md:flex h-[calc(100vh-4rem)]" />
+      <div className="flex flex-1 min-h-[calc(100vh-4rem)]">
+        <Sidebar className="hidden md:flex min-h-full" />
         <main className="flex-1 p-4 md:p-6 overflow-auto">
           {children}
         </main>
