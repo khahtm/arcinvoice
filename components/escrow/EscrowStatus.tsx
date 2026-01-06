@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { useEscrowStatus } from '@/hooks/useEscrowStatus';
 import { formatUSDC, truncateAddress } from '@/lib/utils';
+import { USYCInfoModal } from './USYCInfoModal';
 
 interface EscrowStatusProps {
   escrowAddress: `0x${string}`;
@@ -86,6 +87,13 @@ export function EscrowStatus({
               ? 'Available now'
               : `In ${autoReleaseDays} days from first funding`}
           </p>
+        </div>
+      )}
+
+      {/* USYC Yield Info - show when funds are held */}
+      {(state === 'FUNDED' || state === 'ACTIVE') && (
+        <div className="pt-2 border-t">
+          <USYCInfoModal />
         </div>
       )}
     </Card>
