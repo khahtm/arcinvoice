@@ -97,9 +97,22 @@ export function ConnectButton() {
     );
   }
 
+  // Connect with Arc testnet chain specified
+  const handleConnect = () => {
+    connect(
+      { connector: connectors[0], chainId: arcTestnet.id },
+      {
+        onError: () => {
+          // If fails (chain not found), connect anyway then add chain
+          connect({ connector: connectors[0] });
+        },
+      }
+    );
+  };
+
   return (
     <Button
-      onClick={() => connect({ connector: connectors[0] })}
+      onClick={handleConnect}
       disabled={isPending}
       className="gap-2"
     >
