@@ -24,6 +24,10 @@ export function formatUSDC(amount: number): string {
 }
 
 export function getPaymentUrl(shortCode: string): string {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  // Use window.location.origin on client-side for correct full URL
+  const baseUrl =
+    typeof window !== 'undefined'
+      ? window.location.origin
+      : process.env.NEXT_PUBLIC_SITE_URL || 'https://arcinvoice.org';
   return `${baseUrl}/pay/${shortCode}`;
 }
