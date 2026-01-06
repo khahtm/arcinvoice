@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { TrueFocus } from '@/components/ui/true-focus';
+import { GlareHover } from '@/components/ui/glare-hover';
 import {
   ArrowRight,
   Shield,
@@ -474,13 +475,15 @@ function FeatureCard({
   description: string;
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-lg transition-shadow">
-      <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center text-black mb-4">
-        {icon}
+    <GlareHover className="h-full" glareOpacity={0.15} glareSize={250}>
+      <div className="bg-white rounded-2xl border border-gray-200 p-6 h-full transition-shadow hover:shadow-lg">
+        <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center text-black mb-4">
+          {icon}
+        </div>
+        <h3 className="text-lg font-semibold text-black mb-2">{title}</h3>
+        <p className="text-gray-600 text-sm leading-relaxed">{description}</p>
       </div>
-      <h3 className="text-lg font-semibold text-black mb-2">{title}</h3>
-      <p className="text-gray-600 text-sm leading-relaxed">{description}</p>
-    </div>
+    </GlareHover>
   );
 }
 
