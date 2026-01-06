@@ -1,13 +1,10 @@
 import { createConfig, http } from 'wagmi';
 import { arcMainnet, arcTestnet } from './chains/arc';
-import { injected, metaMask } from 'wagmi/connectors';
+import { injected } from 'wagmi/connectors';
 
 export const config = createConfig({
   chains: [arcTestnet, arcMainnet],
-  connectors: [
-    metaMask(),   // Explicit MetaMask support
-    injected(),   // Catch-all for Rabby, etc.
-  ],
+  connectors: [injected()],
   transports: {
     [arcMainnet.id]: http(),
     [arcTestnet.id]: http(),
