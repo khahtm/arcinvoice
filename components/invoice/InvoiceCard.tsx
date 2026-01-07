@@ -20,7 +20,7 @@ interface InvoiceCardProps {
 
 export function InvoiceCard({ invoice }: InvoiceCardProps) {
   return (
-    <Link href={`/invoices/${invoice.id}`}>
+    <Link href={`/invoices/${invoice.id}`} className="block">
       <Card className="p-4 hover:bg-accent transition-colors cursor-pointer">
         <div className="flex justify-between items-start">
           <div>
