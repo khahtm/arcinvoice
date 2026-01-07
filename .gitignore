@@ -51,3 +51,6 @@ nul
 
 # Claude Code local config
 .claude/
+
+# Claude Code
+CLAUDE.md
