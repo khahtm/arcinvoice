@@ -55,3 +55,7 @@ nul
 # Claude Code
 CLAUDE.md
 plans/
+docs/journals/
+docs/assets/*-test-report.md
+docs/assets/*-summary.md
+docs/assets/model-support-status.md

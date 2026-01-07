@@ -19,17 +19,6 @@ Arc Invoice is a blockchain-based invoice application built on the Arc chain (Ci
 
 ```
 arc-invoice/
-├── .claude/                    # Claude Code configuration
-│   ├── agents/                # Agent definitions
-│   ├── commands/              # Slash commands
-│   ├── hooks/                 # Git hooks and scripts
-│   ├── skills/                # Specialized skills
-│   ├── workflows/             # Development workflows
-│   ├── .ck.json              # Claude Code metadata
-│   ├── metadata.json         # Project metadata
-│   ├── settings.json         # Claude Code settings
-│   └── settings.local.json   # Local overrides
-│
 ├── app/                        # Next.js App Router
 │   ├── layout.tsx            # Root layout with Providers
 │   ├── page.tsx              # Landing page
@@ -69,8 +58,7 @@ arc-invoice/
 ├── tsconfig.json             # TypeScript configuration
 ├── components.json           # shadcn/ui components registry
 ├── package.json              # Dependencies and scripts
-├── README.md                 # Project overview (bootstrap)
-└── CLAUDE.md                 # Claude Code instructions (if present)
+└── README.md                 # Project overview
 ```
 
 ## Core Technologies

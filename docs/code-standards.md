@@ -34,7 +34,6 @@ This document defines coding standards, naming conventions, file organization, a
 
 ```
 arc-invoice/
-├── .claude/                    # Claude Code configuration
 ├── app/                        # Next.js App Router
 │   ├── layout.tsx
 │   ├── page.tsx

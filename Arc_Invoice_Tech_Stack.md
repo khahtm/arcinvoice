@@ -90,7 +90,6 @@
 - Server Components reduce client bundle size
 - Built-in API routes (no separate backend needed)
 - Excellent Vercel deployment integration
-- Great for vibe coding with Claude Code
 
 ### 2.2 UI Libraries
 

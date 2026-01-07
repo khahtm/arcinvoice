@@ -269,7 +269,6 @@ A: [Code Standards - Error Handling Standards](./code-standards.md#error-handlin
 
 ### Internal
 - [README.md](../README.md) - Project overview
-- [CLAUDE.md](../CLAUDE.md) - Claude Code instructions
 - [package.json](../package.json) - Dependencies
 - [tsconfig.json](../tsconfig.json) - TypeScript config
 - [eslint.config.mjs](../eslint.config.mjs) - Linting rules
