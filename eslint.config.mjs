@@ -12,7 +12,7 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // Claude Code template files
+    // Local configuration
     ".claude/**",
     "plans/**",
     "docs/**",
