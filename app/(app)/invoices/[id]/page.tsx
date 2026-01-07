@@ -18,6 +18,7 @@ import { CreateEscrowButton } from '@/components/escrow/CreateEscrowButton';
 import { ReleaseMilestoneButton } from '@/components/escrow/ReleaseMilestoneButton';
 import { useMilestones } from '@/hooks/useMilestones';
 import { DisputePanel } from '@/components/dispute/DisputePanel';
+import { InvoicePdfDownload } from '@/components/invoice/InvoicePdfDownload';
 
 const statusColors: Record<string, string> = {
   draft: 'bg-gray-500',
@@ -189,7 +190,14 @@ export default function InvoiceDetailPage({
             </p>
           </div>
         </div>
-        <Badge className={statusColors[invoice.status]}>{invoice.status}</Badge>
+        <div className="flex items-center gap-2">
+          <InvoicePdfDownload
+            invoice={invoice}
+            milestones={hasMilestones ? milestones : undefined}
+            size="icon"
+          />
+          <Badge className={statusColors[invoice.status]}>{invoice.status}</Badge>
+        </div>
       </div>
 
       {/* Payment Link Card */}

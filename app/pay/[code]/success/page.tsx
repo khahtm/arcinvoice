@@ -1,16 +1,46 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useParams } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, ExternalLink, Copy, Check } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import { InvoicePdfDownload } from '@/components/invoice/InvoicePdfDownload';
+import type { Invoice, Milestone } from '@/types/database';
 
 export default function PaymentSuccessPage() {
   const searchParams = useSearchParams();
+  const params = useParams();
   const txHash = searchParams.get('tx');
+  const code = params.code as string;
+
   const [copied, setCopied] = useState(false);
+  const [invoice, setInvoice] = useState<Invoice | null>(null);
+  const [milestones, setMilestones] = useState<Milestone[]>([]);
+
+  // Fetch invoice data for PDF generation
+  useEffect(() => {
+    if (code) {
+      fetch(`/api/pay/${code}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.invoice) {
+            setInvoice(data.invoice);
+            const hasMilestones =
+              data.invoice.contract_version === 2 ||
+              data.invoice.contract_version === 3;
+            if (hasMilestones && data.invoice.id) {
+              fetch(`/api/invoices/${data.invoice.id}/milestones`)
+                .then((res) => res.json())
+                .then((mData) => setMilestones(mData.milestones || []))
+                .catch(() => {});
+            }
+          }
+        })
+        .catch(() => {});
+    }
+  }, [code]);
 
   const handleCopy = async () => {
     if (txHash) {
@@ -64,6 +94,21 @@ export default function PaymentSuccessPage() {
                 View on Explorer
               </Button>
             )}
+          </div>
+        )}
+
+        {/* PDF Download Section */}
+        {invoice && (
+          <div className="mt-6 pt-4 border-t">
+            <InvoicePdfDownload
+              invoice={invoice}
+              milestones={milestones.length > 0 ? milestones : undefined}
+              variant="default"
+              className="w-full"
+            />
+            <p className="text-xs text-muted-foreground mt-2">
+              Download a receipt for your records
+            </p>
           </div>
         )}
 
