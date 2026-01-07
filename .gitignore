@@ -49,10 +49,8 @@ next-env.d.ts
 # Windows reserved filenames
 nul
 
-# Claude Code local config
+# Local dev config
 .claude/
-
-# Claude Code
 CLAUDE.md
 plans/
 docs/journals/
