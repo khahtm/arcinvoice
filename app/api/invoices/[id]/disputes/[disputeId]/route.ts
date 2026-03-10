@@ -18,6 +18,27 @@ export async function PATCH(
 
   const supabase = await createClient();
 
+  // Verify the caller is a party to this dispute (opener or invoice creator)
+  const { data: dispute, error: disputeError } = await supabase
+    .from('disputes')
+    .select('opened_by, resolution_type, invoices(creator_wallet)')
+    .eq('id', disputeId)
+    .eq('invoice_id', id)
+    .single();
+
+  if (disputeError || !dispute) {
+    return Response.json({ error: 'Dispute not found' }, { status: 404 });
+  }
+
+  const invoiceCreator = (dispute.invoices as { creator_wallet: string } | null)?.creator_wallet;
+  const isParty =
+    dispute.opened_by.toLowerCase() === walletAddress.toLowerCase() ||
+    invoiceCreator?.toLowerCase() === walletAddress.toLowerCase();
+
+  if (!isParty) {
+    return Response.json({ error: 'Only dispute parties can perform this action' }, { status: 403 });
+  }
+
   if (action === 'propose') {
     // Propose resolution
     const { data, error } = await supabase
@@ -39,13 +60,6 @@ export async function PATCH(
   }
 
   if (action === 'accept') {
-    // Get dispute to determine resolution type
-    const { data: dispute } = await supabase
-      .from('disputes')
-      .select('resolution_type')
-      .eq('id', disputeId)
-      .single();
-
     // Mark as resolved
     const { data, error } = await supabase
       .from('disputes')
@@ -60,7 +74,7 @@ export async function PATCH(
     if (error) return Response.json({ error: error.message }, { status: 500 });
 
     // Update invoice status based on resolution
-    const newStatus = dispute?.resolution_type === 'refund' ? 'refunded' : 'released';
+    const newStatus = dispute.resolution_type === 'refund' ? 'refunded' : 'released';
     await supabase.from('invoices').update({ status: newStatus }).eq('id', id);
 
     return Response.json({ dispute: data });

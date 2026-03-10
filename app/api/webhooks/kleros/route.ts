@@ -1,18 +1,42 @@
+import { createHmac, timingSafeEqual } from 'crypto';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { rulingToString, calculateRulingAmounts } from '@/lib/kleros/client';
 
+const KLEROS_WEBHOOK_SECRET = process.env.KLEROS_WEBHOOK_SECRET;
+
 /**
- * Kleros webhook endpoint for receiving rulings
- * In production, this should verify the webhook signature
+ * Verify Kleros webhook HMAC-SHA256 signature.
+ * Returns true only when the secret is configured and the signature matches.
+ */
+function verifyWebhookSignature(payload: string, signature: string): boolean {
+  if (!KLEROS_WEBHOOK_SECRET) {
+    console.error('KLEROS_WEBHOOK_SECRET is not configured');
+    return false;
+  }
+  const expected = createHmac('sha256', KLEROS_WEBHOOK_SECRET).update(payload).digest('hex');
+  try {
+    return timingSafeEqual(Buffer.from(signature, 'hex'), Buffer.from(expected, 'hex'));
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Kleros webhook endpoint for receiving rulings.
+ * Requests must carry a valid HMAC-SHA256 signature in x-kleros-signature.
  */
 export async function POST(req: Request) {
-  // TODO: Verify Kleros webhook signature
   const signature = req.headers.get('x-kleros-signature');
   if (!signature) {
-    console.warn('Kleros webhook received without signature');
+    return Response.json({ error: 'Missing webhook signature' }, { status: 401 });
   }
 
-  const body = await req.json();
+  const rawBody = await req.text();
+  if (!verifyWebhookSignature(rawBody, signature)) {
+    return Response.json({ error: 'Invalid webhook signature' }, { status: 401 });
+  }
+
+  const body = JSON.parse(rawBody);
   const { disputeId, ruling, txHash } = body;
 
   if (!disputeId || ruling === undefined) {
