@@ -54,7 +54,11 @@ export async function PATCH(req: Request) {
       .eq('wallet_address', walletAddress)
       .eq('read', false);
   } else if (ids?.length) {
-    await supabase.from('notifications').update({ read: true }).in('id', ids);
+    await supabase
+      .from('notifications')
+      .update({ read: true })
+      .in('id', ids)
+      .eq('wallet_address', walletAddress);
   }
 
   return Response.json({ success: true });

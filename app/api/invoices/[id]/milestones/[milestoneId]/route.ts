@@ -16,13 +16,28 @@ export async function PATCH(
     return Response.json({ error: 'Invalid status' }, { status: 400 });
   }
 
-  // 'funded' status can be set by payer (no auth required - on-chain tx proves payment)
-  // 'approved' and 'released' require auth (creator action)
-  if (status !== 'funded' && !walletAddress) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const supabase = await createClient();
+
+  // 'approved' and 'released' are creator-only actions; verify ownership
+  if (status !== 'funded') {
+    if (!walletAddress) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { data: invoice } = await supabase
+      .from('invoices')
+      .select('creator_wallet')
+      .eq('id', id)
+      .single();
+
+    if (!invoice) {
+      return Response.json({ error: 'Invoice not found' }, { status: 404 });
+    }
+
+    if (invoice.creator_wallet.toLowerCase() !== walletAddress.toLowerCase()) {
+      return Response.json({ error: 'Forbidden' }, { status: 403 });
+    }
+  }
 
   // Build update data
   const updateData: Record<string, unknown> = { status };
