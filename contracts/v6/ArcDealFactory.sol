@@ -1,16 +1,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "./ArcDealEscrow.sol";
 
 /// @title ArcDealFactory
 /// @notice Factory for deploying V6 deal escrow contracts
-contract ArcDealFactory {
+contract ArcDealFactory is Ownable {
     address public immutable usdc;
     address public immutable feeCollector;
+    /// @notice Platform-controlled dispute arbiter, baked immutably into each new escrow.
+    /// Owner can rotate it for future deals; existing escrows keep the value set at their creation.
+    address public klerosExecutor;
 
     mapping(bytes32 => address) public dealToEscrow;
     address[] public allEscrows;
+
+    event KlerosExecutorUpdated(address indexed executor);
 
     event DealCreated(
         bytes32 indexed dealId,
@@ -21,11 +27,18 @@ contract ArcDealFactory {
         uint256 milestoneCount
     );
 
-    constructor(address _usdc, address _feeCollector) {
+    constructor(address _usdc, address _feeCollector, address _klerosExecutor) Ownable(msg.sender) {
         require(_usdc != address(0), "Invalid USDC");
         require(_feeCollector != address(0), "Invalid fee collector");
         usdc = _usdc;
         feeCollector = _feeCollector;
+        klerosExecutor = _klerosExecutor;
+    }
+
+    /// @notice Rotate the dispute arbiter for future deals. Does not affect already-deployed escrows.
+    function setKlerosExecutor(address _executor) external onlyOwner {
+        klerosExecutor = _executor;
+        emit KlerosExecutorUpdated(_executor);
     }
 
     function createDeal(
@@ -44,7 +57,8 @@ contract ArcDealFactory {
             milestoneAmounts,
             termsHash,
             autoReleaseDays,
-            expectedClient
+            expectedClient,
+            klerosExecutor
         );
 
         escrowAddress = address(escrow);

@@ -29,10 +29,13 @@ contract ArcDealEscrow is ReentrancyGuard {
     uint256 public immutable autoReleaseDays;
     /// @notice If non-zero, only this wallet may sign + fund the deal. Zero = open to first non-creator signer.
     address public immutable expectedClient;
+    /// @notice Dispute arbiter, fixed at creation by the factory (platform-controlled). Creator cannot change it.
+    address public immutable klerosExecutor;
+    /// @notice Stalled-dispute escape hatch: after this window with no resolution, funds refund to client.
+    uint256 public constant DISPUTE_TIMEOUT = 30 days;
 
     // --- Mutable ---
     address public client;
-    address public klerosExecutor;
     State public state;
     Milestone[] public milestones;
     uint256 public currentMilestone;
@@ -42,6 +45,7 @@ contract ArcDealEscrow is ReentrancyGuard {
     uint256 public lastActivityAt;
     bool public disputeActive;
     uint256 public disputedMilestoneIndex;
+    uint256 public disputeOpenedAt;
 
     // --- Events ---
     event TermsSigned(address indexed client);
@@ -55,7 +59,7 @@ contract ArcDealEscrow is ReentrancyGuard {
     event Refunded(address indexed recipient, uint256 amount);
     event InactivityRefund(address indexed recipient, uint256 amount);
     event FullyCompleted();
-    event KlerosExecutorUpdated(address indexed executor);
+    event DisputeTimedOut(address indexed recipient, uint256 amount);
 
     // --- Modifiers ---
     modifier onlyCreator() { require(msg.sender == creator, "Only creator"); _; }
@@ -69,7 +73,8 @@ contract ArcDealEscrow is ReentrancyGuard {
         uint256[] memory _milestoneAmounts,
         bytes32 _termsHash,
         uint256 _autoReleaseDays,
-        address _expectedClient
+        address _expectedClient,
+        address _klerosExecutor
     ) {
         require(_creator != address(0), "Invalid creator");
         require(_usdc != address(0), "Invalid USDC");
@@ -84,6 +89,7 @@ contract ArcDealEscrow is ReentrancyGuard {
         termsHash = _termsHash;
         autoReleaseDays = _autoReleaseDays;
         expectedClient = _expectedClient;
+        klerosExecutor = _klerosExecutor;
         state = State.CREATED;
 
         uint256 total;
@@ -206,15 +212,9 @@ contract ArcDealEscrow is ReentrancyGuard {
         disputeActive = true;
         disputedMilestoneIndex = milestoneIndex;
         state = State.DISPUTED;
+        disputeOpenedAt = block.timestamp;
         lastActivityAt = block.timestamp;
         emit DisputeOpened(milestoneIndex, msg.sender);
-    }
-
-    function setKlerosExecutor(address _executor) external onlyCreator {
-        require(klerosExecutor == address(0), "Already set");
-        require(_executor != address(0), "Invalid");
-        klerosExecutor = _executor;
-        emit KlerosExecutorUpdated(_executor);
     }
 
     function resolveDispute(
@@ -244,6 +244,32 @@ contract ArcDealEscrow is ReentrancyGuard {
         }
 
         emit DisputeResolved(payerAmount, creatorAmount);
+    }
+
+    // =========================================================================
+    // Dispute timeout escape hatch — prevents permanent fund lock if the
+    // executor never resolves. After DISPUTE_TIMEOUT, anyone can trigger a
+    // refund of all unreleased funded milestones to the client (the payer).
+    // =========================================================================
+
+    function resolveDisputeTimeout() external nonReentrant {
+        require(state == State.DISPUTED, "Not disputed");
+        require(block.timestamp >= disputeOpenedAt + DISPUTE_TIMEOUT, "Timeout not reached");
+
+        uint256 refundable;
+        for (uint256 i = 0; i < milestones.length; i++) {
+            if (milestones[i].funded && !milestones[i].released) {
+                refundable += feeCollector.calculatePayerAmount(milestones[i].amount);
+                milestones[i].funded = false;
+            }
+        }
+        require(refundable > 0, "Nothing to refund");
+
+        disputeActive = false;
+        state = State.REFUNDED;
+        lastActivityAt = block.timestamp;
+        require(usdc.transfer(client, refundable), "Transfer failed");
+        emit DisputeTimedOut(client, refundable);
     }
 
     // =========================================================================
@@ -364,6 +390,11 @@ contract ArcDealEscrow is ReentrancyGuard {
         return state == State.ACTIVE &&
                !disputeActive &&
                block.timestamp >= lastActivityAt + (autoReleaseDays * 2 * 1 days);
+    }
+
+    function canResolveDisputeTimeout() external view returns (bool) {
+        return state == State.DISPUTED &&
+               block.timestamp >= disputeOpenedAt + DISPUTE_TIMEOUT;
     }
 
     function getParties() external view returns (
