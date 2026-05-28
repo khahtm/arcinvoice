@@ -27,6 +27,7 @@ export interface Invoice {
   deal_mode: boolean;
   terms_hash: string | null;
   client_wallet: string | null;
+  expected_client_wallet: string | null;
   client_signed_at: string | null;
   creator_signed_at: string | null;
   deal_status: DealStatus;

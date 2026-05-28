@@ -102,6 +102,7 @@ export async function PUT(
         description: data.description,
         client_name: data.client_name || null,
         client_email: data.client_email || null,
+        expected_client_wallet: data.client_wallet || null,
         auto_release_days: data.auto_release_days,
       })
       .eq('id', id)
@@ -167,7 +168,7 @@ export async function PATCH(
 
     const allowedFields = [
       'deal_status', 'escrow_address', 'tx_hash', 'status',
-      'client_wallet', 'client_signed_at', 'creator_signed_at',
+      'client_wallet', 'expected_client_wallet', 'client_signed_at', 'creator_signed_at',
       'last_activity_at', 'dispute_reason', 'disputed_milestone_index',
       'terms_hash', 'funded_at',
     ];

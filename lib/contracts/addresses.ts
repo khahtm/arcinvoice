@@ -18,8 +18,8 @@ export const CONTRACTS = {
     // V4: Terms-based escrow factory (new invoices with terms)
     // Updated 2026-01-08: Creator can now release (not just payer)
     TERMS_FACTORY: '0x6E10Eed6f1f1FBB206c8570Fc3Cd394589863C36' as const,
-    // V6: Deal escrow factory (milestone + terms + dispute freeze)
-    DEAL_FACTORY: '0xf3CdF381fFe10E167394Ec3Db915c69967f8BbC0' as const,
+    // V6: Deal escrow factory (milestone + terms + dispute freeze + optional pinned client)
+    DEAL_FACTORY: '0x4DB2C9FedaC5ff07389e54A4A8af5DF065930f73' as const,
   },
   // Arc Mainnet (Chain ID: 5042001) - Placeholder until mainnet launches
   5042001: {

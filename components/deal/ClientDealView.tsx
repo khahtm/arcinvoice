@@ -81,6 +81,9 @@ export function ClientDealView({ deal, onSign, isSigning, signingStep }: ClientD
   const status = statusConfig[deal.deal_status] || statusConfig.draft;
   const completedCount = deal.milestones.filter((m) => m.released).length;
   const isClient = address && deal.client_wallet?.toLowerCase() === address.toLowerCase();
+  const expectedClient = deal.expected_client_wallet;
+  const wrongExpectedWallet =
+    !!expectedClient && !!address && address.toLowerCase() !== expectedClient.toLowerCase();
   const { writeContractAsync } = useWriteContract();
   const { switchChain } = useSwitchChain();
   const usdcAddr = tryGetContractAddress(chainId ?? 0, 'USDC');
@@ -309,6 +312,15 @@ export function ClientDealView({ deal, onSign, isSigning, signingStep }: ClientD
       {/* Sign Action — only for draft deals */}
       {deal.deal_status === 'draft' && (
         <div className="space-y-4">
+          {expectedClient && (
+            <Card className="p-4 text-center bg-yellow-500/[0.06] border-yellow-500/20">
+              <p className="text-sm text-muted-foreground">
+                This deal is reserved for{' '}
+                <span className="font-mono">{truncateAddress(expectedClient)}</span>.
+                Connect that wallet to sign.
+              </p>
+            </Card>
+          )}
           {!isConnected ? (
             <Card className="p-6 text-center space-y-3">
               <p className="text-muted-foreground">Connect your wallet using the button above to sign and fund this deal.</p>
@@ -317,14 +329,16 @@ export function ClientDealView({ deal, onSign, isSigning, signingStep }: ClientD
             <>
               <Button
                 onClick={onSign}
-                disabled={isSigning}
+                disabled={isSigning || wrongExpectedWallet}
                 className="w-full"
                 size="lg"
               >
                 {isSigning ? (signingStep || 'Signing...') : 'Sign & Agree to Terms'}
               </Button>
               <p className="text-xs text-center text-muted-foreground">
-                By signing, you agree to the milestones and payment terms above.
+                {wrongExpectedWallet
+                  ? 'Connected wallet is not the designated client for this deal.'
+                  : 'By signing, you agree to the milestones and payment terms above.'}
               </p>
             </>
           )}

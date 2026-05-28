@@ -112,7 +112,7 @@ export default function DealDetailPage({
           <p className="mt-1">{deal.description}</p>
         </div>
 
-        {(deal.client_name || deal.client_email) && (
+        {(deal.client_name || deal.client_email || deal.expected_client_wallet) && (
           <div className="border-t pt-4">
             <p className="text-sm text-muted-foreground mb-1">Client</p>
             {deal.client_name && <p className="font-medium">{deal.client_name}</p>}
@@ -120,6 +120,11 @@ export default function DealDetailPage({
             {deal.client_wallet && (
               <p className="font-mono text-sm text-muted-foreground mt-1">
                 Wallet: {truncateAddress(deal.client_wallet)}
+              </p>
+            )}
+            {deal.expected_client_wallet && !deal.client_wallet && (
+              <p className="font-mono text-sm text-muted-foreground mt-1">
+                Reserved for: {truncateAddress(deal.expected_client_wallet)}
               </p>
             )}
           </div>

@@ -27,6 +27,8 @@ contract ArcDealEscrow is ReentrancyGuard {
     bytes32 public immutable termsHash;
     uint256 public immutable totalAmount;
     uint256 public immutable autoReleaseDays;
+    /// @notice If non-zero, only this wallet may sign + fund the deal. Zero = open to first non-creator signer.
+    address public immutable expectedClient;
 
     // --- Mutable ---
     address public client;
@@ -66,19 +68,22 @@ contract ArcDealEscrow is ReentrancyGuard {
         address _feeCollector,
         uint256[] memory _milestoneAmounts,
         bytes32 _termsHash,
-        uint256 _autoReleaseDays
+        uint256 _autoReleaseDays,
+        address _expectedClient
     ) {
         require(_creator != address(0), "Invalid creator");
         require(_usdc != address(0), "Invalid USDC");
         require(_feeCollector != address(0), "Invalid fee collector");
         require(_milestoneAmounts.length > 0 && _milestoneAmounts.length <= 20, "1-20 milestones");
         require(_autoReleaseDays > 0 && _autoReleaseDays <= 90, "1-90 days");
+        require(_expectedClient != _creator, "Client cannot be creator");
 
         creator = _creator;
         usdc = IERC20(_usdc);
         feeCollector = FeeCollector(_feeCollector);
         termsHash = _termsHash;
         autoReleaseDays = _autoReleaseDays;
+        expectedClient = _expectedClient;
         state = State.CREATED;
 
         uint256 total;
@@ -103,6 +108,9 @@ contract ArcDealEscrow is ReentrancyGuard {
 
     function signTerms() external inState(State.CREATED) {
         require(msg.sender != creator, "Self-deal blocked");
+        if (expectedClient != address(0)) {
+            require(msg.sender == expectedClient, "Not the designated client");
+        }
         client = msg.sender;
         state = State.SIGNED;
         lastActivityAt = block.timestamp;

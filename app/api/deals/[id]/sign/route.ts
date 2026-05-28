@@ -38,7 +38,7 @@ export async function POST(
 
   const { data: deal } = await supabase
     .from('invoices')
-    .select('creator_wallet, deal_status, short_code')
+    .select('creator_wallet, deal_status, short_code, expected_client_wallet')
     .eq('id', id)
     .eq('deal_mode', true)
     .single();
@@ -49,6 +49,16 @@ export async function POST(
 
   if (resolvedWallet.toLowerCase() === deal.creator_wallet.toLowerCase()) {
     return Response.json({ error: 'Cannot sign your own deal' }, { status: 400 });
+  }
+
+  if (
+    deal.expected_client_wallet &&
+    resolvedWallet.toLowerCase() !== deal.expected_client_wallet.toLowerCase()
+  ) {
+    return Response.json(
+      { error: 'This deal is reserved for a different wallet.' },
+      { status: 403 }
+    );
   }
 
   if (deal.deal_status !== 'draft') {

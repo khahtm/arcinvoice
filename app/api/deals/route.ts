@@ -109,6 +109,7 @@ export async function POST(req: Request) {
         payment_type: 'escrow',
         client_name: data.client_name || null,
         client_email: data.client_email || null,
+        expected_client_wallet: data.client_wallet || null,
         status: 'pending',
         auto_release_days: data.auto_release_days,
         contract_version: 6,

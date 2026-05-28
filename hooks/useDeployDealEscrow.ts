@@ -1,7 +1,7 @@
 'use client';
 
 import { useWriteContract, useWaitForTransactionReceipt, useChainId } from 'wagmi';
-import { parseUnits, keccak256, toHex } from 'viem';
+import { parseUnits, keccak256, toHex, isAddress, zeroAddress } from 'viem';
 import { DEAL_FACTORY_ABI } from '@/lib/contracts/deal-abi';
 import { getContractAddress } from '@/lib/contracts/addresses';
 import type { DealFormData } from '@/lib/validation';
@@ -30,12 +30,16 @@ export function useDeployDealEscrow() {
     const termsHash = keccak256(
       toHex(`${dealId}:${data.description}:${JSON.stringify(data.milestones)}`)
     );
+    const expectedClient =
+      data.client_wallet && isAddress(data.client_wallet)
+        ? (data.client_wallet as `0x${string}`)
+        : zeroAddress;
 
     writeContract({
       address: factoryAddress,
       abi: DEAL_FACTORY_ABI,
       functionName: 'createDeal',
-      args: [dealIdBytes32, milestoneAmounts, termsHash, BigInt(data.auto_release_days)],
+      args: [dealIdBytes32, milestoneAmounts, termsHash, BigInt(data.auto_release_days), expectedClient],
     });
   };
 

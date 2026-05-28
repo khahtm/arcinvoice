@@ -32,7 +32,8 @@ contract ArcDealFactory {
         bytes32 dealId,
         uint256[] calldata milestoneAmounts,
         bytes32 termsHash,
-        uint256 autoReleaseDays
+        uint256 autoReleaseDays,
+        address expectedClient
     ) external returns (address escrowAddress) {
         require(dealToEscrow[dealId] == address(0), "Deal already exists");
 
@@ -42,7 +43,8 @@ contract ArcDealFactory {
             feeCollector,
             milestoneAmounts,
             termsHash,
-            autoReleaseDays
+            autoReleaseDays,
+            expectedClient
         );
 
         escrowAddress = address(escrow);

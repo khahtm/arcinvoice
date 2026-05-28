@@ -335,6 +335,19 @@ export const DEAL_ESCROW_ABI = [
   },
   {
     "inputs": [],
+    "name": "expectedClient",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "feeCollector",
     "outputs": [
       {
@@ -839,6 +852,11 @@ export const DEAL_FACTORY_ABI = [
         "internalType": "uint256",
         "name": "autoReleaseDays",
         "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "expectedClient",
+        "type": "address"
       }
     ],
     "name": "createDeal",

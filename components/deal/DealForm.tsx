@@ -22,6 +22,7 @@ interface DealFormProps {
     milestones: { description: string; amount: number }[];
     client_name?: string;
     client_email?: string;
+    client_wallet?: string;
     auto_release_days?: number;
   };
   submitLabel?: string;
@@ -50,6 +51,7 @@ export function DealForm({
       description: initialValues?.description || '',
       client_name: initialValues?.client_name || '',
       client_email: initialValues?.client_email || '',
+      client_wallet: initialValues?.client_wallet || '',
       milestones: initialValues?.milestones?.length ? initialValues.milestones : [{ description: '', amount: 0 }],
     },
   });
@@ -111,6 +113,17 @@ export function DealForm({
           <Label htmlFor="client_email">Client Email (optional)</Label>
           <Input id="client_email" type="email" placeholder="client@email.com" {...register('client_email')} />
         </div>
+      </div>
+
+      <div>
+        <Label htmlFor="client_wallet">Client Wallet (optional)</Label>
+        <Input id="client_wallet" placeholder="0x..." className="font-mono" {...register('client_wallet')} />
+        {errors.client_wallet && (
+          <p className="text-sm text-destructive mt-1">{errors.client_wallet.message as string}</p>
+        )}
+        <p className="text-sm text-muted-foreground mt-1">
+          If set, only this wallet can accept and fund the deal. Leave blank to let any client sign.
+        </p>
       </div>
 
       {/* AI Deal Builder */}

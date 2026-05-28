@@ -44,6 +44,7 @@ export default function NewDealPage() {
           description: d.description || '',
           client_name: d.client_name || undefined,
           client_email: d.client_email || undefined,
+          client_wallet: d.expected_client_wallet || undefined,
           auto_release_days: d.auto_release_days,
           milestones: (d.milestones || []).map((m: { description: string; amount: number }) => ({
             description: m.description,

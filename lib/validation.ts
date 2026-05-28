@@ -32,6 +32,13 @@ export const dealSchema = z.object({
       (val) => !val || z.string().email().safeParse(val).success,
       'Invalid email'
     ),
+  client_wallet: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || /^0x[a-fA-F0-9]{40}$/.test(val),
+      'Invalid wallet address'
+    ),
   auto_release_days: z.number().min(1).max(90).default(14),
   milestones: z
     .array(milestoneSchema)
